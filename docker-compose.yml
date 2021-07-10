@@ -1,102 +1,111 @@
-#
-# Load Balancer
-#
-# lb:
-#   build: ./.docker/lb/
-#   links:
-#     - consul
-#   ports:
-#     - "80:80"
-#     - "8181:8181"
-#
-# Service Discovery - Consul
-#
-# consul:
-#   command: -server -bootstrap -advertise 10.0.2.15
-#   image: progrium/consul:latest
-#   ports:
-#     - "8300:8300"
-#     - "8400:8400"
-#     - "8500:8500"
-#     - "8600:53/udp"
-#
-# Service Discovery - Registrator
-#
-# registrator:
-#   command: -ip=10.0.2.15 consul://consul:8500
-#   image: gliderlabs/registrator:latest
-#   links:
-#     - consul
-#   volumes:
-#     - "/var/run/docker.sock:/tmp/docker.sock"
-#
-# Data-only container for rubygems
-#
-rubygems:
-  image: "busybox"
-  volumes:
-    - /web/rubygems/2.7.2
+version: "3.9"
 
-# data:
-#   image: "busybox:glibc"
-#   volumes:
-#     - /var/lib/mysql
+services:
+  # env_file:
+  #   ./.docker/development/.env
+  # - ./.docker/development/aws.env
+  # - ./.docker/development/mitc.env
+  # - ./.docker/development/rabbit.env
 
+  #
+  # Load Balancer
+  #
+  # lb:
+  #   build: ./.docker/lb/
+  #   links:
+  #     - consul
+  #   ports:
+  #     - "80:80"
+  #     - "8181:8181"
+  #
+  # Service Discovery - Consul
+  #
+  # consul:
+  #   command: -server -bootstrap -advertise 10.0.2.15
+  #   image: progrium/consul:latest
+  #   ports:
+  #     - "8300:8300"
+  #     - "8400:8400"
+  #     - "8500:8500"
+  #     - "8600:53/udp"
+  #
+  # Service Discovery - Registrator
+  #
+  # registrator:
+  #   command: -ip=10.0.2.15 consul://consul:8500
+  #   image: gliderlabs/registrator:latest
+  #   links:
+  #     - consul
+  #   volumes:
+  #     - "/var/run/docker.sock:/tmp/docker.sock"
+  #
+
+  # Data-only container for rubygems
+  #
+  rubygems:
+    image: "busybox"
+    volumes:
+      - /web/rubygems/2.7.2
+
+  db:
+    image: mongo:4.2
+    volumes:
+      - mongodb:/data/db
+      - mongodb_config:/data/configdb
+    ports:
+      - 27017:27017
+
+  rabbitmq:
+    image: rabbitmq:3.8-management
+    hostname: "rabbitmq"
+    volumes:
+      - rabbitmq_etc:/etc/rabbitmq/
+      - rabbitmq_data:/var/lib/rabbitmq/
+      - rabbitmq_logs:/var/log/rabbitmq/
+      - ./.docker/rabbitmq/rabbitmq.config:/etc/rabbitmq/rabbitmq.config:ro
+      - ./.docker/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+    ports:
+      - 5672:5672
+      - 15672:15672
+  # db:
+  #   image: "mysql:latest"
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: root
+  #   volumes_from:
+  #     - data
+  # memcache:
+  #   image: "sylvainlasnier/memcached:latest"
+  # elastic:
+  #   image: "elasticsearch:latest"
+
+  #
+  # Microservices
+  #
+  fdsh_gateway:
+    build:
+      context: ../fdsh_gateway/.docker/development
+    volumes_from:
+      - rubygems
+    links:
+      - db
+      - rabbitmq
+
+  medicaid_gateway:
+    build:
+      context: ../medicaid_gateway/.docker/development
+    volumes_from:
+      - rubygems
+    links:
+      - db
+      - rabbitmq
+
+volumes:
+  mongodb:
+  mongodb_config:
+  rabbitmq_etc:
+  rabbitmq_data:
+  rabbitmq_logs:
 #
-# Infrastructure
-#
-
-db:
-  image: mongo:4.2
-  volumes:
-    - mongodb:/data/db
-    - mongodb_config:/data/configdb
-  ports:
-    - 27017:27017
-
-rabbitmq:
-  image: rabbitmq:3.8-management
-  hostname: "rabbitmq"
-  volumes:
-    - rabbitmq_etc:/etc/rabbitmq/
-    - rabbitmq_data:/var/lib/rabbitmq/
-    - rabbitmq_logs:/var/log/rabbitmq/
-    - ./.docker/rabbitmq/rabbitmq.config:/etc/rabbitmq/rabbitmq.config:ro
-    - ./.docker/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
-  ports:
-    - 5672:5672
-    - 15672:15672
-# db:
-#   image: "mysql:latest"
-#   environment:
-#     MYSQL_ROOT_PASSWORD: root
-#   volumes_from:
-#     - data
-# memcache:
-#   image: "sylvainlasnier/memcached:latest"
-# elastic:
-#   image: "elasticsearch:latest"
-
-#
-# Microservices
-#
-# fdsh_gateway:
-#   extends:
-#     file: common.yml
-#     service: microservice
-#   build: ./services/rosi_user_service
-#   environment:
-#     SERVICE_3000_NAME: "fdsh_gateway"
-#     SERVICE_3000_TAGS: "backend,fdsh_gateway"
-#   volumes:
-#     - ./services/rosi_user_service:/web/service
-#   volumes_from:
-#     - rubygems
-#   links:
-#     - db
-#     - rabbitmq
-#     - consul
-
 # user:
 #   extends:
 #     file: common.yml
