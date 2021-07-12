@@ -1,5 +1,4 @@
 .git
 .dockerignore
-.env
 site/node_modules/
 site/vendor/bundle/

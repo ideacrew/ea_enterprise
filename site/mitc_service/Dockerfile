@@ -17,8 +17,16 @@ RUN apt-get update \
 COPY . $APP_HOME
 # ADD Gemfile* $APP_HOME/
 
-ENV LANG=C.UTF-8
+# Configure bundler and PATH
+ENV GEM_HOME="/usr/local/bundle/2.3"
+ENV LANG=C.UTF-8 \
+  BUNDLE_PATH=$GEM_HOME \
+  BUNDLE_JOBS=4 \
+  BUNDLE_RETRY=3 \
+  PATH=$GEM_HOME/bin:$GEM_HOME/gems/bin:$PATH
+
 RUN gem install --source "https://rubygems.org" bundler
 RUN bundle config --global frozen 1
 
-ONBUILD RUN bundle install --jobs=4 --retry=3
+ONBUILD RUN yarn install
+ONBUILD RUN bundle install

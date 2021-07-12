@@ -1,4 +1,4 @@
-FROM ruby:2.7.2
+FROM ruby:2.5.1
 
 LABEL author="IdeaCrew"
 
@@ -24,15 +24,20 @@ RUN apt-get update \
 COPY . $HOME
 
 # Configure bundler and PATH
-ENV GEM_HOME=/web/rubygems/2.7.2
+ENV GEM_HOME="/usr/local/bundle/2.5"
 ENV LANG=C.UTF-8 \
   BUNDLE_PATH=$GEM_HOME \
   BUNDLE_JOBS=4 \
   BUNDLE_RETRY=3 \
-  PATH=/web/rubygems/2.7.2/bin:$PATH
+  PATH=$GEM_HOME/bin:$GEM_HOME/gems/bin:$PATH
 
 RUN gem install --source "https://rubygems.org" bundler
 RUN bundle config --global frozen 1
 
 ONBUILD RUN yarn install
-ONBUILD RUN bundle install --jobs=4 --retry=3
+ONBUILD RUN bundle install
+
+# Add a script to be executed every time the container starts.
+COPY ./entrypoint.sh /usr/bin
+RUN chmod +x /usr/bin/entrypoint.sh
+ENTRYPOINT ["entrypoint.sh"]
