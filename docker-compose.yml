@@ -1,54 +1,26 @@
 version: "3.9"
 
 services:
-  # env_file:
-  #   ./.docker/development/.env
-  # - ./.docker/development/aws.env
-  # - ./.docker/development/mitc.env
-  # - ./.docker/development/rabbit.env
-
-  #
-  # Load Balancer
-  #
-  # lb:
-  #   build: ./.docker/lb/
-  #   links:
-  #     - consul
-  #   ports:
-  #     - "80:80"
-  #     - "8181:8181"
-  #
-  # Service Discovery - Consul
-  #
-  # consul:
-  #   command: -server -bootstrap -advertise 10.0.2.15
-  #   image: progrium/consul:latest
-  #   ports:
-  #     - "8300:8300"
-  #     - "8400:8400"
-  #     - "8500:8500"
-  #     - "8600:53/udp"
-  #
-  # Service Discovery - Registrator
-  #
-  # registrator:
-  #   command: -ip=10.0.2.15 consul://consul:8500
-  #   image: gliderlabs/registrator:latest
-  #   links:
-  #     - consul
-  #   volumes:
-  #     - "/var/run/docker.sock:/tmp/docker.sock"
-  #
-
-  # Data-only container for rubygems
-  #
-  rubygems:
+  # Data-only container for shared_resources
+  shared_resources:
     image: "busybox"
     volumes:
-      - /web/rubygems/2.7.2
+      - gem_cache:/web/rubygems/2.7.2
+      - node_modules:/web/app/node_modules
 
-  db:
-    image: mongo:4.2
+  #
+  # Infrastructure Services
+  #
+  mongodb:
+    build: ./site/mongodb
+    hostname: mongodb
+    restart: always
+    environment:
+      # - MONGO_INITDB_DATABASE: ea_enterprise
+      - MONGO_INITDB_ROOT_USERNAME="root"
+      - MONGO_INITDB_ROOT_PASSWORD="example"
+    # networks:
+    #   - backend
     volumes:
       - mongodb:/data/db
       - mongodb_config:/data/configdb
@@ -56,190 +28,135 @@ services:
       - 27017:27017
 
   rabbitmq:
-    image: rabbitmq:3.8-management
-    hostname: "rabbitmq"
+    build: ./site/rabbitmq
+    hostname: rabbitmq
+    env_file:
+      - ./site/rabbitmq/rabbitmq.env
+    # networks:
+    #   - backend
     volumes:
       - rabbitmq_etc:/etc/rabbitmq/
       - rabbitmq_data:/var/lib/rabbitmq/
       - rabbitmq_logs:/var/log/rabbitmq/
-      - ./.docker/rabbitmq/rabbitmq.config:/etc/rabbitmq/rabbitmq.config:ro
-      - ./.docker/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+      - ./site/rabbitmq/rabbitmq.config:/etc/rabbitmq/rabbitmq.config:ro
+      - ./site/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
     ports:
       - 5672:5672
       - 15672:15672
-  # db:
-  #   image: "mysql:latest"
-  #   environment:
-  #     MYSQL_ROOT_PASSWORD: root
-  #   volumes_from:
-  #     - data
-  # memcache:
-  #   image: "sylvainlasnier/memcached:latest"
-  # elastic:
-  #   image: "elasticsearch:latest"
+
+  redis:
+    build: ./site/redis
+    hostname: redis
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
 
   #
   # Microservices
   #
+  enroll:
+    build:
+      context: ../enroll
+      dockerfile: ../ea_enterprise/site/enroll_service/Dockerfile
+    volumes_from:
+      - shared_resources
+    volumes:
+      - ../enroll:/enroll
+    env_file:
+      - ./site/.env
+    depends_on:
+      - mongodb
+      - rabbitmq
+      - redis
+    links:
+      - fdsh_gateway
+      - medicaid_gateway
+      - polypress
+    ports:
+      - "3002:3000"
+    command: bash -c "rm -f tmp/pids/server.pid && mkdir -p tmp/pids && bundle exec puma -C config/puma.rb"
+    # command: bash -c "rm -f tmp/pids/server.pid && mkdir -p tmp/pids && yarn install --check-files && bundle exec rails assets:precompile && bundle exec puma -C config/puma.rb"
+
+
   fdsh_gateway:
     build:
-      context: ../fdsh_gateway/.docker/development
+      context: ../fdsh_gateway
+      dockerfile: ../ea_enterprise/site/fdsh_gateway_service/Dockerfile
     volumes_from:
-      - rubygems
-    links:
-      - db
+      - shared_resources
+    volumes:
+      - ../fdsh_gateway:/fdsh_gateway
+    env_file:
+      - ./site/.env
+    depends_on:
+      - mongodb
       - rabbitmq
+    command: /fdsh_gateway/bin/rails server --port 3006 --binding 0.0.0.0
+    links:
+      - polypress
+    ports:
+      - "3006:3006"
 
   medicaid_gateway:
     build:
-      context: ../medicaid_gateway/.docker/development
+      context: ../medicaid_gateway
+      dockerfile: ../ea_enterprise/site/medicaid_gateway_service/Dockerfile
+    command: bundle install
     volumes_from:
-      - rubygems
-    links:
-      - db
+      - shared_resources
+    volumes:
+      - ../medicaid_gateway:/medicaid_gateway
+    env_file:
+      - ./site/.env
+      - ./site/medicaid_gateway_service/.env
+    depends_on:
+      - mongodb
       - rabbitmq
+    links:
+      - polypress
+      - mitc
+    ports:
+      - "3005:3005"
+    command: /medicaid_gateway/bin/rails server --port 3005 --binding 0.0.0.0
+
+  mitc:
+    build:
+      context: ../medicaid_eligibility
+      dockerfile: ../ea_enterprise/site/mitc_service/Dockerfile
+    volumes:
+      - ../medicaid_eligibility:/mitc
+      - type: tmpfs
+        target: /mitc/tmp/pids/
+    links:
+      - polypress
+    command: sleep 300
+    # command: bin/rails server --port 3001 --binding 0.0.0.0
+    ports:
+      - "3001:3001"
+
+  polypress:
+    build:
+      context: ../polypress
+      dockerfile: ../ea_enterprise/site/polypress_service/Dockerfile
+    command: bundle install
+    volumes_from:
+      - shared_resources
+    volumes:
+      - ../polypress:/polypress
+    env_file:
+      - ./site/.env
+    depends_on:
+      - mongodb
+      - rabbitmq
+    ports:
+      - "3003:3003"
+    command: sleep 300
+    # command: /polypress/bin/rails server --port 3003 --binding 0.0.0.0
 
 volumes:
+  gem_cache:
+  node_modules:
   mongodb:
   mongodb_config:
   rabbitmq_etc:
   rabbitmq_data:
   rabbitmq_logs:
-#
-# user:
-#   extends:
-#     file: common.yml
-#     service: microservice
-#   build: ./services/rosi_user_service
-#   environment:
-#     SERVICE_3000_NAME: "user"
-#     SERVICE_3000_TAGS: "backend,user"
-#   volumes:
-#     - ./services/rosi_user_service:/web/service
-#   volumes_from:
-#     - rubygems
-#   links:
-#     - db
-#     - rabbitmq
-#     - consul
-# catalog:
-#   extends:
-#     file: common.yml
-#     service: microservice
-#   build: ./services/rosi_catalog_service
-#   environment:
-#     SERVICE_3000_NAME: "catalog"
-#     SERVICE_3000_TAGS: "backend,catalog"
-#   volumes:
-#     - ./services/rosi_catalog_service:/web/service
-#   volumes_from:
-#     - rubygems
-#   links:
-#     - db
-#     - rabbitmq
-#     - consul
-# cart:
-#   extends:
-#     file: common.yml
-#     service: microservice
-#   build: ./services/rosi_cart_service
-#   environment:
-#     SERVICE_3000_NAME: "cart"
-#     SERVICE_3000_TAGS: "backend,cart"
-#   volumes:
-#     - ./services/rosi_cart_service:/web/service
-#   volumes_from:
-#     - rubygems
-#   links:
-#     - db
-#     - rabbitmq
-#     - consul
-# mybusiness:
-#   extends:
-#     file: common.yml
-#     service: microservice
-#   build: ./services/rosi_my_business_service
-#   environment:
-#     SERVICE_3000_NAME: "mybusiness"
-#     SERVICE_3000_TAGS: "backend,mybusiness"
-#   volumes:
-#     - ./services/rosi_my_business_service:/web/service
-#   volumes_from:
-#     - rubygems
-#   links:
-#     - db
-#     - rabbitmq
-#     - consul
-# inventory:
-#   extends:
-#     file: common.yml
-#     service: microservice
-#   build: ./services/rosi_inventory_service
-#   command: "runsvdir /etc/service"
-#   environment:
-#     SERVICE_3000_NAME: "inventory"
-#     SERVICE_3000_TAGS: "backend,inventory"
-#   volumes:
-#     - ./services/rosi_inventory_service:/web/service
-#   volumes_from:
-#     - rubygems
-#   links:
-#     - db
-#     - rabbitmq
-#     - consul
-# oms:
-#   extends:
-#     file: common.yml
-#     service: microservice
-#   build: ./services/rosi_oms_service
-#   command: "runsvdir /etc/service"
-#   environment:
-#     SERVICE_3000_NAME: "oms"
-#     SERVICE_3000_TAGS: "backend,oms"
-#   volumes:
-#     - ./services/rosi_oms_service:/web/service
-#   volumes_from:
-#     - rubygems
-#   links:
-#     - db
-#     - rabbitmq
-#     - consul
-# tax:
-#   extends:
-#     file: common.yml
-#     service: microservice
-#   build: ./services/rosi_tax_service
-#   command: "runsvdir /etc/service"
-#   environment:
-#     SERVICE_3000_NAME: "tax"
-#     SERVICE_3000_TAGS: "backend,tax"
-#   volumes:
-#     - ./services/rosi_tax_service:/web/service
-#   volumes_from:
-#     - rubygems
-#   links:
-#     - rabbitmq
-#     - consul
-# #
-# # Frontend
-# #
-# keeplounge:
-#   extends:
-#     file: common.yml
-#     service: frontend
-#   build: ./frontend/keep_lounge
-#   environment:
-#     SERVICE_80_NAME: "keeplounge"
-#     SERVICE_80_TAGS: "frontend,keep,keeplounge"
-#   volumes:
-#     - ./frontend/keep_lounge:/web/client
-# keepwww:
-#   extends:
-#     file: common.yml
-#     service: frontend
-#   build: ./frontend/keep_www
-#   environment:
-#     SERVICE_80_NAME: "keepwww"
-#     SERVICE_80_TAGS: "frontend,keep,keepwww"
-#   volumes:
-#     - ./frontend/keep_www:/web/client
