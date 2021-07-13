@@ -8,10 +8,10 @@ services:
     build: ./site/mongodb
     hostname: mongodb
     restart: always
-    environment:
-      # - MONGO_INITDB_DATABASE: ea_enterprise
-      - MONGO_INITDB_ROOT_USERNAME="root"
-      - MONGO_INITDB_ROOT_PASSWORD="example"
+    # environment:
+    #   # - MONGO_INITDB_DATABASE: ea_enterprise
+    #   - MONGO_INITDB_ROOT_USERNAME="root"
+    #   - MONGO_INITDB_ROOT_PASSWORD="example"
     # networks:
     #   - backend
     volumes:
@@ -50,6 +50,8 @@ services:
     build:
       context: ../enroll
       dockerfile: ../ea_enterprise/site/enroll_service/Dockerfile
+      args:
+        BUNDLER_VERSION_OVERRIDE: '2.2.12'
     volumes:
       - ../enroll:/enroll
       - gem_cache:/usr/local/bundle/2.5
@@ -61,13 +63,19 @@ services:
       - rabbitmq
       - redis
     links:
+      - mongodb
       - fdsh_gateway
       - medicaid_gateway
       - polypress
     ports:
       - "3002:3000"
-    command: bash -c "bundle exec puma -C config/puma.rb"
+
+    # command: sleep 6000
+
+    command: bash -c "bin/rails server --port 3000 --binding 0.0.0.0"
+    # command: bash -c "rm -f tmp/pids/server.pid && mkdir -p tmp/pids && yarn install --check-files && bundle install && bundle exec puma -C config/puma.rb"
     # command: bash -c "rm -f tmp/pids/server.pid && mkdir -p tmp/pids && yarn install --check-files && bundle exec rails assets:precompile && bundle exec puma -C config/puma.rb"
+    # command: bash -c "bundle exec puma -C config/puma.rb"
 
 
   fdsh_gateway:
@@ -83,7 +91,7 @@ services:
     depends_on:
       - mongodb
       - rabbitmq
-    command: bash -c "bin/rails server --port 3006 --binding 0.0.0.0"
+    command: bash -c "bundle install && bin/rails server --port 3006 --binding 0.0.0.0"
     links:
       - polypress
     ports:
