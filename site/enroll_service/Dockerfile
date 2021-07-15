@@ -21,8 +21,6 @@ RUN apt-get update \
 # RUN adduser --disabled-password --gecos '' --uid $USER_ID --gid $GROUP_ID user
 # RUN chown -R user:user $HOME
 
-COPY . $HOME
-
 # Configure bundler and PATH
 ENV GEM_HOME="/usr/local/bundle/2.5"
 ENV LANG=C.UTF-8 \
@@ -31,8 +29,12 @@ ENV LANG=C.UTF-8 \
   BUNDLE_RETRY=3 \
   PATH=$GEM_HOME/bin:$GEM_HOME/gems/bin:$PATH
 
-RUN gem install --source "https://rubygems.org" bundler
+ARG BUNDLER_VERSION_OVERRIDE
+ENV BUNDLER_VERSION=$BUNDLER_VERSION_OVERRIDE
+RUN gem update --system && gem install bundler:$BUNDLER_VERSION
 RUN bundle config --global frozen 1
+
+COPY . $HOME
 
 ONBUILD RUN yarn install
 ONBUILD RUN bundle install
