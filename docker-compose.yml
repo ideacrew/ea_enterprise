@@ -127,9 +127,7 @@ services:
       - gem_cache:/usr/local/bundle/2.3
       - type: tmpfs
         target: /mitc/tmp/pids/
-    links:
-      - polypress
-    command: bash -c "bundle install && bin/rails server --port 3001 --binding 0.0.0.0"
+    command: bash -c "bin/rails server --port 3001 --binding 0.0.0.0"
     ports:
       - "3001:3001"
 
