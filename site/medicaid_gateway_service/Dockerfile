@@ -27,10 +27,5 @@ ENV LANG=C.UTF-8 \
 RUN gem install --source "https://rubygems.org" bundler
 RUN bundle config --global frozen 1
 
-ONBUILD RUN yarn install
-ONBUILD RUN bundle install
-
-# Add a script to be executed every time the container starts.
-COPY entrypoint.sh /usr/bin
-RUN chmod +x /usr/bin/entrypoint.sh
-ENTRYPOINT ["entrypoint.sh"]
+RUN cd $HOME && yarn install
+RUN cd $HOME && bundle install

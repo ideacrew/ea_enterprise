@@ -28,8 +28,6 @@ ENV LANG=C.UTF-8 \
 RUN gem install --source "https://rubygems.org" bundler
 RUN bundle config --global frozen 1
 
-RUN yarn install
-RUN bundle install
-RUN bundle pristine
-
-COPY . $HOME
+RUN cd $APP_HOME && yarn install
+RUN cd $APP_HOME && bundle install
+RUN cd $APP_HOME && bundle pristine

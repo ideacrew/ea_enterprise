@@ -51,7 +51,7 @@ services:
       context: ../enroll
       dockerfile: ../ea_enterprise/site/enroll_service/Dockerfile
       args:
-        BUNDLER_VERSION_OVERRIDE: '2.2.12'
+        BUNDLER_VERSION_OVERRIDE: "2.2.12"
     volumes:
       - ../enroll:/enroll
       - gem_cache:/usr/local/bundle/2.5
@@ -70,13 +70,10 @@ services:
     ports:
       - "3002:3000"
 
-    # command: sleep 6000
-
     command: bash -c "bin/rails server --port 3000 --binding 0.0.0.0"
-    # command: bash -c "rm -f tmp/pids/server.pid && mkdir -p tmp/pids && yarn install --check-files && bundle install && bundle exec puma -C config/puma.rb"
-    # command: bash -c "rm -f tmp/pids/server.pid && mkdir -p tmp/pids && yarn install --check-files && bundle exec rails assets:precompile && bundle exec puma -C config/puma.rb"
-    # command: bash -c "bundle exec puma -C config/puma.rb"
-
+  # command: bash -c "rm -f tmp/pids/server.pid && mkdir -p tmp/pids && yarn install --check-files && bundle install && bundle exec puma -C config/puma.rb"
+  # command: bash -c "rm -f tmp/pids/server.pid && mkdir -p tmp/pids && yarn install --check-files && bundle exec rails assets:precompile && bundle exec puma -C config/puma.rb"
+  # command: bash -c "bundle exec puma -C config/puma.rb"
 
   fdsh_gateway:
     build:
@@ -112,7 +109,6 @@ services:
       - mongodb
       - rabbitmq
     links:
-      - polypress
       - mitc
     ports:
       - "3005:3005"
@@ -135,7 +131,6 @@ services:
     build:
       context: ../polypress
       dockerfile: ../ea_enterprise/site/polypress_service/Dockerfile
-    command: bundle install
     volumes:
       - ../polypress:/polypress
       - gem_cache:/usr/local/bundle/2.7.2
@@ -149,7 +144,8 @@ services:
       - rabbitmq
     ports:
       - "3003:3003"
-    command: bash -c "rm -f tmp/pids/server.pid && mkdir -p tmp/pids && bundle exec puma -C config/puma.rb"
+    command: bash -c "bundle install && bin/rails server --port 3003 --binding 0.0.0.0"
+    # command: bash -c "rm -f tmp/pids/server.pid && mkdir -p tmp/pids && bundle exec puma -C config/puma.rb"
 
 volumes:
   mitc:
