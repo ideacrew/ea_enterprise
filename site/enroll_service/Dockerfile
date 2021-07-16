@@ -6,13 +6,16 @@ ENV HOME /enroll
 RUN mkdir -p $HOME
 WORKDIR $HOME
 
-RUN curl -sL https://deb.nodesource.com/setup_12.x | bash -
+RUN curl -sL https://deb.nodesource.com/setup_10.x | bash -
+
+RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - && \
+    echo 'deb http://dl.yarnpkg.com/debian/ stable main' > /etc/apt/sources.list.d/yarn.list
 
 RUN apt-get update \
   && apt-get -yq dist-upgrade \
-  && apt-get install -y tzdata build-essential nodejs vim \
-  && apt-get autoremove -y \
-  && npm install --force --global yarn
+  && apt-get install -y tzdata build-essential nodejs vim yarn=1.22.4-1 \
+  && apt-get autoremove -y 
+  #&& npm install --force --global yarn
 
 # ARG USER_ID
 # ARG GROUP_ID
@@ -36,10 +39,13 @@ RUN bundle config --global frozen 1
 
 COPY . $HOME
 
-ONBUILD RUN yarn install
-ONBUILD RUN bundle install
-
+RUN yarn install
+RUN bundle install
+RUN ls -ltr /enroll/public/
+RUN ls -ltr /enroll/node_modules/
 # Add a script to be executed every time the container starts.
-COPY ./entrypoint.sh /usr/bin
-RUN chmod +x /usr/bin/entrypoint.sh
-ENTRYPOINT ["entrypoint.sh"]
+#COPY ./entrypoint.sh /usr/bin
+#RUN chmod +x /usr/bin/entrypoint.sh
+#ENTRYPOINT ["entrypoint.sh"]
+
+#ENTRYPOINT ["/bin/bash", "-c", "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && exec \"$@\""]

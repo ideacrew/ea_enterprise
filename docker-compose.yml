@@ -52,9 +52,12 @@ services:
       dockerfile: ../ea_enterprise/site/enroll_service/Dockerfile
       args:
         BUNDLER_VERSION_OVERRIDE: '2.2.12'
+    image: enroll:dev-0.1.0
     volumes:
       - ../enroll:/enroll
       - gem_cache:/usr/local/bundle/2.5
+      - node_modules_cache:/enroll/node_modules
+      - packs_cache:/enroll/public/packs
     env_file:
       - ./site/.env
       - ./site/rabbitmq/rabbitmq.env
@@ -82,6 +85,7 @@ services:
     build:
       context: ../fdsh_gateway
       dockerfile: ../ea_enterprise/site/fdsh_gateway_service/Dockerfile
+    image: fdsh_gateway:dev-0.1.0
     volumes:
       - ../fdsh_gateway:/fdsh_gateway
       - gem_cache:/usr/local/bundle/2.7.2
@@ -91,7 +95,7 @@ services:
     depends_on:
       - mongodb
       - rabbitmq
-    command: bash -c "bundle install && bin/rails server --port 3006 --binding 0.0.0.0"
+    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && bin/rails server --port 3006 --binding 0.0.0.0"
     links:
       - polypress
     ports:
@@ -101,6 +105,7 @@ services:
     build:
       context: ../medicaid_gateway
       dockerfile: ../ea_enterprise/site/medicaid_gateway_service/Dockerfile
+    image: medicaid_gateway:dev-0.1.0
     volumes:
       - ../medicaid_gateway:/medicaid_gateway
       - gem_cache:/usr/local/bundle/2.7.2
@@ -116,12 +121,13 @@ services:
       - mitc
     ports:
       - "3005:3005"
-    command: bash -c "bundle install && bin/rails server --port 3005 --binding 0.0.0.0"
+    command: bash -c "rm -f tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && bin/rails server --port 3005 --binding 0.0.0.0"
 
   mitc:
     build:
       context: ../medicaid_eligibility
       dockerfile: ../ea_enterprise/site/mitc_service/Dockerfile
+    image: mitc:dev-0.1.0
     volumes:
       - ../medicaid_eligibility:/mitc
       - gem_cache:/usr/local/bundle/2.3
@@ -137,6 +143,7 @@ services:
     build:
       context: ../polypress
       dockerfile: ../ea_enterprise/site/polypress_service/Dockerfile
+    image: polypress:dev-0.1.0
     command: bundle install
     volumes:
       - ../polypress:/polypress
@@ -158,6 +165,7 @@ volumes:
   gem_cache:
   yarn_cache:
   node_modules_cache:
+  packs_cache:
   mongodb:
   mongodb_config:
   rabbitmq_etc:

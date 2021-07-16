@@ -40,6 +40,8 @@ ONBUILD RUN yarn install --modules-dir=$HOME/node_modules
 ONBUILD RUN bundle install
 
 # Add a script to be executed every time the container starts.
-COPY ./entrypoint.sh /usr/bin
-RUN chmod +x /usr/bin/entrypoint.sh
-ENTRYPOINT ["entrypoint.sh"]
+#COPY ./entrypoint.sh /usr/bin
+#RUN chmod +x /usr/bin/entrypoint.sh
+#ENTRYPOINT ["entrypoint.sh"]
+
+#ENTRYPOINT ["/bin/bash", "-c", "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && exec '$@'"]
