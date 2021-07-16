@@ -36,10 +36,7 @@ ENV LANG=C.UTF-8 \
 
 ARG BUNDLER_VERSION_OVERRIDE
 ENV BUNDLER_VERSION=$BUNDLER_VERSION_OVERRIDE
-# RUN gem update --system && gem install bundler:$BUNDLER_VERSION
-# RUN bundle config --global frozen 1
-
-RUN gem install bundler:$BUNDLER_VERSION
+RUN gem update --system && gem install bundler:$BUNDLER_VERSION
 RUN bundle config --global frozen 1
 
 COPY . $HOME
