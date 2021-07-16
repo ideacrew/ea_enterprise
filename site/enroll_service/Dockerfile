@@ -39,8 +39,9 @@ RUN bundle config --global frozen 1
 
 COPY . $HOME
 
-RUN yarn install
-RUN bundle install
+RUN cd $HOME && yarn install
+RUN cd $HOME && bundle install
+
 RUN ls -ltr /enroll/public/
 RUN ls -ltr /enroll/node_modules/
 # Add a script to be executed every time the container starts.
