@@ -38,8 +38,3 @@ RUN bundle config --global frozen 1
 
 RUN cd $HOME && yarn install
 RUN cd $HOME && bundle install
-
-# Add a script to be executed every time the container starts.
-# COPY ./entrypoint.sh /usr/bin
-# RUN chmod +x /usr/bin/entrypoint.sh
-# ENTRYPOINT ["entrypoint.sh"]
