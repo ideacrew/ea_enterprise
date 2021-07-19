@@ -205,7 +205,7 @@ services:
     ports:
       - "3002:3000"
 
-    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && bin/rails server --port 3000 --binding 0.0.0.0"
+    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && bin/rails server --port 3002 --binding 0.0.0.0"
     # command: bash -c "rm -f tmp/pids/server.pid && mkdir -p tmp/pids && yarn install --check-files && bundle install && bundle exec puma -C config/puma.rb"
     # command: bash -c "rm -f tmp/pids/server.pid && mkdir -p tmp/pids && yarn install --check-files && bundle exec rails assets:precompile && bundle exec puma -C config/puma.rb"
     # command: bash -c "bundle exec puma -C config/puma.rb"
@@ -248,6 +248,8 @@ services:
     depends_on:
       - mongodb
       - rabbitmq
+      - redis
+      - mitc
     ports:
       - "3005:3005"
     command: bash -c "rm -f tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && bin/rails server --port 3005 --binding 0.0.0.0"
@@ -264,7 +266,7 @@ services:
         target: /mitc/tmp/pids/
     networks:
       - bridge
-    command: bash -c "bundle install && bin/rails server --port 3001 --binding 0.0.0.0"
+    command: bash -c "bin/rails server --port 3001 --binding 0.0.0.0"
     ports:
       - "3001:3001"
 

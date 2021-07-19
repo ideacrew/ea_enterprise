@@ -24,6 +24,8 @@ RUN apt-get update \
 # RUN adduser --disabled-password --gecos '' --uid $USER_ID --gid $GROUP_ID user
 # RUN chown -R user:user $HOME
 
+COPY . $HOME
+
 # Configure bundler and PATH
 ENV GEM_HOME="/usr/local/bundle/2.5"
 ENV LANG=C.UTF-8 \
@@ -44,9 +46,4 @@ RUN cd $HOME && bundle install
 
 RUN ls -ltr /enroll/public/
 RUN ls -ltr /enroll/node_modules/
-# Add a script to be executed every time the container starts.
-#COPY ./entrypoint.sh /usr/bin
-#RUN chmod +x /usr/bin/entrypoint.sh
-#ENTRYPOINT ["entrypoint.sh"]
 
-#ENTRYPOINT ["/bin/bash", "-c", "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && exec \"$@\""]
