@@ -40,45 +40,29 @@ services:
     # env_file:
     #   - ./site/mongodb/.env
     restart: unless-stopped
-    # environment:
-      # - MONGO_INITDB_DATABASE=ea_enterprise
-      # - MONGO_INITDB_ROOT_USERNAME="guest"
-      # - MONGO_INITDB_ROOT_PASSWORD="guest"
-      # - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USER:-guest}
     volumes:
       - mongodb:/data/db/
       - mongodb:/data/var/log/mongodb/
-      - mongodb_config:/data/configdb/
-      # - ./site/mongodb/mongod.conf:/etc/mongod.conf
-      # - ./site/mongodb/initdb.d/:/docker-entrypoint-init.d/
-      # - ./site/mongodb/mongod.conf:/etc/mongod.conf
-      # - ./site/mongodb/initdb.d/:/docker-entrypoint-initdb.d/
-      # - ./site/mongodb/data/db/:/data/db/
-      # - ./site/mongodb/data/log/:/var/log/mongodb/
+      - ./site/mongodb/mongod.conf:/etc/mongod.conf
+      - ./site/mongodb/initdb.d/:/docker-entrypoint-initdb.d/
     networks:
       - bridge
     ports:
       - 27017:27017
-    # command: "mongod --port 27017"
-    # command: ["-f", "/etc/mongod.conf"]
 
   mongo-express:
     image: mongo-express
     restart: unless-stopped
-    # volumes:
-      # - ./site/mongo-express/docker-entrypoint.sh:/docker-entrypoint.sh
-    # env_file:
-    #   - ./site/.env
+    volumes:
+      - ./site/mongo-express/docker-entrypoint.sh:/docker-entrypoint.sh
+    env_file:
+      - ./site/.env
+      - ./site/mongo-express/.env
     environment:
       - ME_CONFIG_MONGODB_SERVER=mongo
       - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
       - ME_CONFIG_OPTIONS_EDITORTHEME=ambiance
       - ME_CONFIG_MONGODB_URL="mongodb://{ME_CONFIG_MONGODB_SERVER}:${ME_CONFIG_MONGODB_PORT}/"
-      # - ME_CONFIG_MONGODB_ADMINUSERNAME=guest
-      # - ME_CONFIG_MONGODB_ADMINPASSWORD=guest
-      # - ME_CONFIG_MONGODB_URL="mongodb://${ME_CONFIG_MONGODB_ADMINUSERNAME}:${ME_CONFIG_MONGODB_ADMINPASSWORD}@${ME_CONFIG_MONGODB_SERVER}:${ME_CONFIG_MONGODB_PORT}/${MONGO_INITDB_DATABASE}?authSource=admin"
-        # ME_CONFIG_BASICAUTH_USERNAME: ${ME_CONFIG_BASICAUTH_USERNAME}
-        # ME_CONFIG_BASICAUTH_PASSWORD: ${ME_CONFIG_BASICAUTH_PASSWORD}
     depends_on:
       - mongodb
     networks:
@@ -92,8 +76,8 @@ services:
     restart: unless-stopped
     env_file:
       - ./site/rabbitmq/rabbitmq.env
-    # networks:
-    #   - backend
+    networks:
+      - bridge
     volumes:
       - rabbitmq_etc:/etc/rabbitmq/
       - rabbitmq_data:/var/lib/rabbitmq/
@@ -216,6 +200,8 @@ services:
       - mongodb
       - rabbitmq
       - redis
+    networks:
+      - bridge
     ports:
       - "3002:3000"
 
@@ -239,6 +225,8 @@ services:
     depends_on:
       - mongodb
       - rabbitmq
+    networks:
+      - bridge
     command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && bin/rails server --port 3006 --binding 0.0.0.0"
     ports:
       - "3006:3006"
@@ -255,6 +243,8 @@ services:
       - ./site/.env
       - ./site/rabbitmq/rabbitmq.env
       - ./site/medicaid_gateway_service/.env
+    networks:
+      - bridge
     depends_on:
       - mongodb
       - rabbitmq
@@ -272,6 +262,8 @@ services:
       - gem_cache:/usr/local/bundle/2.3
       - type: tmpfs
         target: /mitc/tmp/pids/
+    networks:
+      - bridge
     command: bash -c "bundle install && bin/rails server --port 3001 --binding 0.0.0.0"
     ports:
       - "3001:3001"
@@ -293,6 +285,8 @@ services:
     depends_on:
       - mongodb
       - rabbitmq
+    networks:
+      - bridge
     ports:
       - "3003:3003"
     command: bash -c "rm -f tmp/pids/server.pid && mkdir -p tmp/pids && bundle exec puma -C config/puma.rb"
@@ -309,7 +303,6 @@ volumes:
   node_modules_cache:
   packs_cache:
   mongodb:
-  mongodb_config:
   postgres:
   rabbitmq_etc:
   rabbitmq_data:
