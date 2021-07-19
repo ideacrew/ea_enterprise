@@ -59,10 +59,10 @@ services:
       - ./site/.env
       - ./site/mongo-express/.env
     environment:
-      - ME_CONFIG_MONGODB_SERVER=mongo
-      - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
-      - ME_CONFIG_OPTIONS_EDITORTHEME=ambiance
-      - ME_CONFIG_MONGODB_URL="mongodb://{ME_CONFIG_MONGODB_SERVER}:${ME_CONFIG_MONGODB_PORT}/"
+      ME_CONFIG_MONGODB_SERVER: "${ME_CONFIG_MONGODB_SERVER:-mongo}"
+      ME_CONFIG_MONGODB_PORT: "${ME_CONFIG_MONGODB_PORT}"
+      ME_CONFIG_MONGODB_URL: "${ME_CONFIG_MONGODB_URL:-mongodb://${ME_CONFIG_MONGODB_SERVER}:${ME_CONFIG_MONGODB_PORT}/}"
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: "${ME_CONFIG_MONGODB_ENABLE_ADMIN:-true}"
     depends_on:
       - mongodb
     networks:
