@@ -24,8 +24,6 @@ RUN apt-get update \
 # RUN adduser --disabled-password --gecos '' --uid $USER_ID --gid $GROUP_ID user
 # RUN chown -R user:user $HOME
 
-COPY . $HOME
-
 # Configure bundler and PATH
 ENV GEM_HOME="/usr/local/bundle/2.5"
 ENV LANG=C.UTF-8 \
@@ -35,7 +33,7 @@ ENV LANG=C.UTF-8 \
   PATH=$GEM_HOME/bin:$GEM_HOME/gems/bin:$PATH
 
 ARG BUNDLER_VERSION_OVERRIDE
-ENV BUNDLER_VERSION=$BUNDLER_VERSION_OVERRIDE
+ENV BUNDLER_VERSION='2.2.12'
 RUN gem update --system && gem install bundler:$BUNDLER_VERSION
 RUN bundle config --global frozen 1
 
