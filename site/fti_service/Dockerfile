@@ -1,8 +1,8 @@
-FROM ruby:2.7.3 as fdsh_gateway_enterprise
+FROM ruby:2.7.3 as fti_enterprise
 
 LABEL author="IdeaCrew"
 
-ENV HOME /fdsh_gateway
+ENV HOME /fti
 RUN mkdir -p $HOME
 WORKDIR $HOME
 
@@ -29,7 +29,10 @@ COPY . $HOME
 
 RUN gem install --source "https://rubygems.org" bundler
 RUN cd $HOME && bundle install && bundle binstubs bundler
-RUN cd $HOME && yarn install
+
+RUN cd $HOME && yarn add @rails/webpacker@5.4.0 && yarn add --dev webpack-dev-server
+RUN cd $HOME && rails webpacker:install:erb
+RUN cd $HOME && yarn add bootstrap && yarn add @popperjs/core
 
 RUN unset BUNDLE_PATH
 RUN unset BUNDLE_BIN
