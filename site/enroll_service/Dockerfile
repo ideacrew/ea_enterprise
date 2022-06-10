@@ -1,4 +1,4 @@
-FROM ruby:2.5.1
+FROM ruby:2.5.9
 
 LABEL author="IdeaCrew"
 
@@ -6,14 +6,18 @@ ENV HOME /enroll
 RUN mkdir -p $HOME
 WORKDIR $HOME
 
-RUN curl -sL https://deb.nodesource.com/setup_10.x | bash -
+RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -
 
-RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - && \
-    echo 'deb http://dl.yarnpkg.com/debian/ stable main' > /etc/apt/sources.list.d/yarn.list
+RUN wget https://dl.yarnpkg.com/debian/pubkey.gpg 
+RUN cat pubkey.gpg | apt-key add -
+RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
+
+#RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - && \
+#    echo 'deb http://dl.yarnpkg.com/debian/ stable main' > /etc/apt/sources.list.d/yarn.list
 
 RUN apt-get update \
   && apt-get -yq dist-upgrade \
-  && apt-get install -y tzdata build-essential nodejs vim yarn=1.22.4-1 \
+  && apt-get install -y tzdata build-essential nodejs libsodium23 vim yarn=1.22.4-1 \
   && apt-get autoremove -y 
   #&& npm install --force --global yarn
 
@@ -27,7 +31,7 @@ RUN apt-get update \
 COPY . $HOME
 
 # Configure bundler and PATH
-ENV GEM_HOME="/usr/local/bundle/2.5"
+ENV GEM_HOME="/usr/local/bundle/2.5.9"
 ENV LANG=C.UTF-8 \
   BUNDLE_PATH=$GEM_HOME \
   BUNDLE_JOBS=4 \

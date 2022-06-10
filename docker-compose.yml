@@ -1,13 +1,12 @@
-version: "3.9"
+version: "3.8"
 
 services:
   #
   # Infrastructure Services
   #
   mongodb:
-    build: ./site/mongodb
+    image: mongo:4.2
     hostname: mongodb
-    restart: always
     # environment:
     #   # - MONGO_INITDB_DATABASE: ea_enterprise
     #   - MONGO_INITDB_ROOT_USERNAME="root"
@@ -19,12 +18,20 @@ services:
       - mongodb_config:/data/configdb
     ports:
       - 27017:27017
+    # healthcheck:
+    #   test: echo 'db.runCommand("ping").ok' | mongo mongo:27017/test --quiet
+    #   interval: 10s
+    #   timeout: 10s
+    #   retries: 5
+    #   start_period: 40s
+
 
   rabbitmq:
-    build: ./site/rabbitmq
+    # build: ./site/rabbitmq
+    image: rabbitmq:3.8-management
     hostname: rabbitmq
     env_file:
-      - ./site/rabbitmq/rabbitmq.env
+      - ./site/rabbitmq/rabbitmq.dev.env
     # networks:
     #   - backend
     volumes:
@@ -36,12 +43,23 @@ services:
     ports:
       - 5672:5672
       - 15672:15672
+    healthcheck:
+      test: rabbitmq-diagnostics check_port_connectivity
+      interval: 1s
+      timeout: 3s
+      retries: 30
+
 
   redis:
-    build: ./site/redis
-    hostname: redis
+    # hostname: redis
+    image: redis:7.0
+    ports:
+      - 6379
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+
 
   #
   # Microservices
@@ -58,9 +76,10 @@ services:
       - gem_cache:/usr/local/bundle/2.5
       - node_modules_cache:/enroll/node_modules
       - packs_cache:/enroll/public/packs
+      - enroll_rails_cache:/medicaid_gateway/tmp/cache
     env_file:
-      - ./site/.env
-      - ./site/rabbitmq/rabbitmq.env
+      - ./site/.env.dev
+      - ./site/rabbitmq/rabbitmq.dev.env
     depends_on:
       - mongodb
       - rabbitmq
@@ -71,9 +90,9 @@ services:
       - medicaid_gateway
       - polypress
     ports:
-      - "3002:3000"
+      - "3000:3000"
 
-    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && bin/rails server --port 3002 --binding 0.0.0.0"
+    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && bin/rails server --port 3000 --binding 0.0.0.0"
     # command: bash -c "rm -f tmp/pids/server.pid && mkdir -p tmp/pids && yarn install --check-files && bundle install && bundle exec puma -C config/puma.rb"
     # command: bash -c "rm -f tmp/pids/server.pid && mkdir -p tmp/pids && yarn install --check-files && bundle exec rails assets:precompile && bundle exec puma -C config/puma.rb"
     # command: bash -c "bundle exec puma -C config/puma.rb"
@@ -88,16 +107,23 @@ services:
       - ../fdsh_gateway:/fdsh_gateway
       - gem_cache:/usr/local/bundle/2.7.2
     env_file:
-      - ./site/.env
-      - ./site/rabbitmq/rabbitmq.env
+      - ./site/.env.dev
+      - ./site/rabbitmq/rabbitmq.dev.env
     depends_on:
-      - mongodb
-      - rabbitmq
+      mongodb:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
     command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && bin/rails server --port 3006 --binding 0.0.0.0"
     links:
-      - polypress
+      - mongodb
+      - rabbitmq
     ports:
       - "3006:3006"
+#    restart: on-failure # I don't like this, but the timing of rabbitmq is killing it
 
   medicaid_gateway:
     build:
@@ -106,20 +132,35 @@ services:
     image: medicaid_gateway:dev-0.1.0
     volumes:
       - ../medicaid_gateway:/medicaid_gateway
-      - gem_cache:/usr/local/bundle/2.7.2
+      # - gem_cache:/usr/local/bundle/2.7.2
+      # - mcg_rails_cache:/medicaid_gateway/tmp/cache
+      #- .:/medicaid_gateway:cached
+      - mcg_rails_cache:/medicaid_gateway/tmp/cache
+      - mcg_bundle:/bundle
+      - mcg_node_modules:/medicaid_gateway/node_modules
+      - mcg_packs:/medicaid_gateway/public/packs
     env_file:
-      - ./site/.env
-      - ./site/rabbitmq/rabbitmq.env
-      - ./site/medicaid_gateway_service/.env
+      - ./site/.env.dev
+      - ./site/rabbitmq/rabbitmq.dev.env
+      - ./site/medicaid_gateway_service/.env.dev
     depends_on:
+      mongodb:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    links:
+      - mitc
       - mongodb
       - rabbitmq
       - redis
-    links:
-      - mitc
     ports:
       - "3005:3005"
-    command: bash -c "rm -f tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && bin/rails server --port 3005 --binding 0.0.0.0"
+    #command: bash -c "rm -f tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && bin/rails server --port 3005 --binding 0.0.0.0"
+    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && yarn install --check-files && bin/rails dev:cache && bin/rails server --port 3005 --binding 0.0.0.0"
+    # restart: on-failure # I don't like this, but the timing of rabbitmq is killing it
+
 
   mitc:
     build:
@@ -134,28 +175,32 @@ services:
     command: bash -c "bin/rails server --port 3001 --binding 0.0.0.0"
     ports:
       - "3001:3001"
+    links:
+      - redis
+      # - mongodb
 
   polypress:
     build:
       context: ../polypress
       dockerfile: ../ea_enterprise/site/polypress_service/Dockerfile
     image: polypress:dev-0.1.0
-    command: bundle install
     volumes:
       - ../polypress:/polypress
       - gem_cache:/usr/local/bundle/2.7.2
       # - yarn_cache:/yarn
       # - node_modules_cache:/polypress/node_modules
     env_file:
-      - ./site/.env
-      - ./site/rabbitmq/rabbitmq.env
+      - ./site/.env.dev
+      - ./site/rabbitmq/rabbitmq.dev.env
     depends_on:
       - mongodb
       - rabbitmq
     ports:
       - "3003:3003"
-    command: bash -c "rm -f tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && bin/rails server --port 3003 --binding 0.0.0.0"
-
+    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && yarn install --check-files && bin/rails server --port 3003 --binding 0.0.0.0"
+    links:
+      - mongodb
+      - rabbitmq
 volumes:
   mitc:
   gem_cache:
@@ -167,3 +212,9 @@ volumes:
   rabbitmq_etc:
   rabbitmq_data:
   rabbitmq_logs:
+  mcg_rails_cache:
+  mcg_bundle:
+  enroll_rails_cache:
+  mcg_node_modules:
+  mcg_packs:
+
