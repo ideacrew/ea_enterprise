@@ -10,7 +10,7 @@ RUN curl -sL https://deb.nodesource.com/setup_12.x | bash -
 
 RUN apt-get update \
   && apt-get -yq dist-upgrade \
-  && apt-get install -y tzdata build-essential nodejs vim default-jre \
+  && apt-get install -y tzdata build-essential nodejs libsodium23 vim default-jre \
   && apt-get autoremove -y \
   && npm install --force --global yarn
 
@@ -29,3 +29,4 @@ RUN bundle config --global frozen 1
 
 RUN cd $HOME && yarn install
 RUN cd $HOME && bundle install
+RUN cd $HOME && bin/rails dev:cache
