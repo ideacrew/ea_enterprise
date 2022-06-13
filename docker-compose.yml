@@ -158,7 +158,7 @@ services:
     ports:
       - "3005:3005"
     #command: bash -c "rm -f tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && bin/rails server --port 3005 --binding 0.0.0.0"
-    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && yarn install --check-files && bin/rails dev:cache && bin/rails server --port 3005 --binding 0.0.0.0"
+    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && yarn install --check-files && bin/rails server --port 3005 --binding 0.0.0.0"
     # restart: on-failure # I don't like this, but the timing of rabbitmq is killing it
 
 
