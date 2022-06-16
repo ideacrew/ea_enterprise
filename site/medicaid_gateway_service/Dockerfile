@@ -1,4 +1,4 @@
-FROM ruby:2.7.2
+FROM ruby:2.7.6
 
 LABEL author="IdeaCrew"
 
@@ -17,7 +17,7 @@ RUN apt-get update \
 COPY . $HOME
 
 # Configure bundler and PATH
-ENV GEM_HOME="/usr/local/bundle/2.7.2"
+ENV GEM_HOME="/usr/local/bundle/2.7"
 ENV LANG=C.UTF-8 \
   BUNDLE_PATH=$GEM_HOME \
   BUNDLE_JOBS=4 \

@@ -145,7 +145,7 @@ services:
     image: medicaid_gateway:dev-0.1.0
     volumes:
       - ../medicaid_gateway:/medicaid_gateway
-      # - gem_cache:/usr/local/bundle/2.7.2
+      - mcg_gem_cache:/usr/local/bundle/2.7
       # - mcg_rails_cache:/medicaid_gateway/tmp/cache
       #- .:/medicaid_gateway:cached
       - mcg_rails_cache:/medicaid_gateway/tmp/cache
@@ -235,6 +235,7 @@ volumes:
   mcg_bundle:
   mcg_node_modules:
   mcg_packs:
+  mcg_gem_cache:
   enroll_gem_cache:
   enroll_node_modules_cache:
   enroll_packs_cache:
