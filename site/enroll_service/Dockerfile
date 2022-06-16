@@ -31,11 +31,12 @@ RUN apt-get update \
 COPY . $HOME
 
 # Configure bundler and PATH
-ENV GEM_HOME="/usr/local/bundle/2.5.9"
+ENV GEM_HOME="/usr/local/bundle/2.5"
 ENV LANG=C.UTF-8 \
   BUNDLE_PATH=$GEM_HOME \
   BUNDLE_JOBS=4 \
   BUNDLE_RETRY=3 \
+  SHELL=/bin/bash \
   PATH=$GEM_HOME/bin:$GEM_HOME/gems/bin:$PATH
 
 ARG BUNDLER_VERSION_OVERRIDE

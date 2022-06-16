@@ -27,6 +27,6 @@ ENV LANG=C.UTF-8 \
 RUN gem install --source "https://rubygems.org" bundler
 RUN bundle config --global frozen 1
 
-RUN cd $HOME && yarn install
 RUN cd $HOME && bundle install
 RUN cd $HOME && bin/rails dev:cache
+RUN cd $HOME && yarn install --check-files 

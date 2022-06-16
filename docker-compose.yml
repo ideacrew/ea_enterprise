@@ -7,12 +7,6 @@ services:
   mongodb:
     image: mongo:4.2
     hostname: mongodb
-    # environment:
-    #   # - MONGO_INITDB_DATABASE: ea_enterprise
-    #   - MONGO_INITDB_ROOT_USERNAME="root"
-    #   - MONGO_INITDB_ROOT_PASSWORD="example"
-    # networks:
-    #   - backend
     volumes:
       - mongodb:/data/db
       - mongodb_config:/data/configdb
@@ -27,13 +21,10 @@ services:
 
 
   rabbitmq:
-    # build: ./site/rabbitmq
     image: rabbitmq:3.8-management
     hostname: rabbitmq
     env_file:
       - ./site/rabbitmq/rabbitmq.dev.env
-    # networks:
-    #   - backend
     volumes:
       - rabbitmq_etc:/etc/rabbitmq/
       - rabbitmq_data:/var/lib/rabbitmq/
@@ -60,10 +51,27 @@ services:
     healthcheck:
       test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
 
+  #
+  # Reverse proxies:
+  #
+
+  mcgw_nginx:
+    image: nginx:1.22
+    volumes:
+      - ${PWD}/site/mcgw_nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      medicaid_gateway:
+        condition: service_started
+    links:
+      - medicaid_gateway
+    ports:
+      - 3030:3030
+
 
   #
   # Microservices
   #
+
   enroll:
     build:
       context: ../enroll
@@ -71,19 +79,24 @@ services:
       args:
         BUNDLER_VERSION_OVERRIDE: '2.2.12'
     image: enroll:dev-0.1.0
+    environment:
+      - SHELL=/bin/bash
     volumes:
       - ../enroll:/enroll
-      - gem_cache:/usr/local/bundle/2.5
-      - node_modules_cache:/enroll/node_modules
-      - packs_cache:/enroll/public/packs
+      - enroll_gem_cache:/usr/local/bundle/2.5
+      - enroll_node_modules_cache:/enroll/node_modules
+      - enroll_packs_cache:/enroll/public/packs
       - enroll_rails_cache:/medicaid_gateway/tmp/cache
     env_file:
       - ./site/.env.dev
       - ./site/rabbitmq/rabbitmq.dev.env
     depends_on:
-      - mongodb
-      - rabbitmq
-      - redis
+      mongodb:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     links:
       - mongodb
       - fdsh_gateway
@@ -91,11 +104,12 @@ services:
       - polypress
     ports:
       - "3000:3000"
-
-    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && bin/rails server --port 3000 --binding 0.0.0.0"
-    # command: bash -c "rm -f tmp/pids/server.pid && mkdir -p tmp/pids && yarn install --check-files && bundle install && bundle exec puma -C config/puma.rb"
-    # command: bash -c "rm -f tmp/pids/server.pid && mkdir -p tmp/pids && yarn install --check-files && bundle exec rails assets:precompile && bundle exec puma -C config/puma.rb"
-    # command: bash -c "bundle exec puma -C config/puma.rb"
+    # this works for sure
+    #command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && bin/rails server --port 3000 --binding 0.0.0.0"
+    # DC !
+    #command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids &&bundle exec rake configuration:client_configuration_toggler client=dc && bin/rails server --port 3000 --binding 0.0.0.0"
+    # Maine !
+    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle exec rake configuration:client_configuration_toggler client=me && bin/rails server --port 3000 --binding 0.0.0.0"
 
 
   fdsh_gateway:
@@ -105,7 +119,7 @@ services:
     image: fdsh_gateway:dev-0.1.0
     volumes:
       - ../fdsh_gateway:/fdsh_gateway
-      - gem_cache:/usr/local/bundle/2.7.2
+      - fdsh_gem_cache:/usr/local/bundle/2.7.2
     env_file:
       - ./site/.env.dev
       - ./site/rabbitmq/rabbitmq.dev.env
@@ -123,7 +137,6 @@ services:
       - rabbitmq
     ports:
       - "3006:3006"
-#    restart: on-failure # I don't like this, but the timing of rabbitmq is killing it
 
   medicaid_gateway:
     build:
@@ -157,10 +170,9 @@ services:
       - redis
     ports:
       - "3005:3005"
-    #command: bash -c "rm -f tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && bin/rails server --port 3005 --binding 0.0.0.0"
-    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && yarn install --check-files && bin/rails server --port 3005 --binding 0.0.0.0"
-    # restart: on-failure # I don't like this, but the timing of rabbitmq is killing it
-
+    #this works for sure
+    #command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && yarn install --check-files && bin/rails server --port 3005 --binding 0.0.0.0"
+    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bin/rails server --port 3005 --binding 0.0.0.0"
 
   mitc:
     build:
@@ -169,12 +181,15 @@ services:
     image: mitc:dev-0.1.0
     volumes:
       - ../medicaid_eligibility:/mitc
-      - gem_cache:/usr/local/bundle/2.3
+      - mitc_gem_cache:/usr/local/bundle/2.3
       - type: tmpfs
         target: /mitc/tmp/pids/
     command: bash -c "bin/rails server --port 3001 --binding 0.0.0.0"
     ports:
       - "3001:3001"
+    depends_on:
+      redis:
+        condition: service_healthy
     links:
       - redis
       # - mongodb
@@ -186,15 +201,17 @@ services:
     image: polypress:dev-0.1.0
     volumes:
       - ../polypress:/polypress
-      - gem_cache:/usr/local/bundle/2.7.2
+      - polypress_gem_cache:/usr/local/bundle/2.7.2
       # - yarn_cache:/yarn
       # - node_modules_cache:/polypress/node_modules
     env_file:
       - ./site/.env.dev
       - ./site/rabbitmq/rabbitmq.dev.env
     depends_on:
-      - mongodb
-      - rabbitmq
+      mongodb:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     ports:
       - "3003:3003"
     command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && yarn install --check-files && bin/rails server --port 3003 --binding 0.0.0.0"
@@ -203,7 +220,9 @@ services:
       - rabbitmq
 volumes:
   mitc:
-  gem_cache:
+  fdsh_gem_cache:
+  polypress_gem_cache:
+  mitc_gem_cache:
   # yarn_cache:
   node_modules_cache:
   packs_cache:
@@ -214,7 +233,10 @@ volumes:
   rabbitmq_logs:
   mcg_rails_cache:
   mcg_bundle:
-  enroll_rails_cache:
   mcg_node_modules:
   mcg_packs:
+  enroll_gem_cache:
+  enroll_node_modules_cache:
+  enroll_packs_cache:
+  enroll_rails_cache:
 
