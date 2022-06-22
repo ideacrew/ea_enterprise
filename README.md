@@ -113,4 +113,6 @@ Very similar to the rules regarding when to restart a rails application
 
 ## TODO
 
+- add scripts to open console quickly 
+- add scripts to run rubocop/tests
 - fix/add the nginx in front of the services that has them on production
