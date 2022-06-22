@@ -17,7 +17,7 @@ RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources
 
 RUN apt-get update \
   && apt-get -yq dist-upgrade \
-  && apt-get install -y tzdata build-essential nodejs libsodium23 vim yarn=1.22.4-1 \
+  && apt-get install -y tzdata build-essential nodejs git libsodium23 vim yarn=1.22.4-1 \
   && apt-get autoremove -y 
   #&& npm install --force --global yarn
 
@@ -45,10 +45,9 @@ RUN gem update --system && gem install bundler:$BUNDLER_VERSION
 RUN bundle config --global frozen 1
 
 COPY . $HOME
-
-RUN cd $HOME && yarn install
+# RUN ls -ltr /enroll/public/
+# RUN ls -ltr /enroll/node_modules/
+#&& yarn install --check-files
 RUN cd $HOME && bundle install
-
-RUN ls -ltr /enroll/public/
-RUN ls -ltr /enroll/node_modules/
+RUN cd $HOME && yarn install --network-timeout 100000 
 

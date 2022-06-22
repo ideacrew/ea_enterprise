@@ -12,13 +12,12 @@ services:
       - mongodb_config:/data/configdb
     ports:
       - 27017:27017
-    # healthcheck:
-    #   test: echo 'db.runCommand("ping").ok' | mongo mongo:27017/test --quiet
-    #   interval: 10s
-    #   timeout: 10s
-    #   retries: 5
-    #   start_period: 40s
-
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo mongo:27017/test --quiet
+      interval: 1s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
 
   rabbitmq:
     image: rabbitmq:3.8-management
@@ -85,8 +84,8 @@ services:
       - ../enroll:/enroll
       - enroll_gem_cache:/usr/local/bundle/2.5
       - enroll_node_modules_cache:/enroll/node_modules
-      - enroll_packs_cache:/enroll/public/packs
-      - enroll_rails_cache:/medicaid_gateway/tmp/cache
+      # - enroll_packs_cache:/enroll/public/packs
+      - enroll_rails_cache:/enroll/tmp/cache
     env_file:
       - ./site/.env.dev
       - ./site/rabbitmq/rabbitmq.dev.env
@@ -104,12 +103,16 @@ services:
       - polypress
     ports:
       - "3000:3000"
-    # this works for sure
-    #command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && bin/rails server --port 3000 --binding 0.0.0.0"
+    # this works for sure bin/webpack-dev-server && 
+    #command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && CLIENT=dc bin/rails server --port 3000 --binding 0.0.0.0"
     # DC !
     #command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids &&bundle exec rake configuration:client_configuration_toggler client=dc && bin/rails server --port 3000 --binding 0.0.0.0"
     # Maine !
-    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle exec rake configuration:client_configuration_toggler client=me && bin/rails server --port 3000 --binding 0.0.0.0"
+    # command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle exec rake configuration:client_configuration_toggler client=me && bin/rails server --port 3000 --binding 0.0.0.0"
+    # ME / new stykle!
+    # command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && CLIENT=me bin/rails server --port 3000 --binding 0.0.0.0"
+    # DC / new stykle!
+    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bin/webpack && CLIENT=dc bin/rails server --port 3000 --binding 0.0.0.0"
 
 
   fdsh_gateway:
@@ -142,6 +145,12 @@ services:
     build:
       context: ../medicaid_gateway
       dockerfile: ../ea_enterprise/site/medicaid_gateway_service/Dockerfile
+      #dockerfile: ../medicaid_gateway/.docker/development/Dockerfile
+      # args:
+      #     RUBY_VERSION: "2.7.2"
+      #     BUNDLER_VERSION_OVERRIDE: "2.2.14"
+      #     NODE_MAJOR: "12"
+      #     YARN_VERSION: "1.22.4"
     image: medicaid_gateway:dev-0.1.0
     volumes:
       - ../medicaid_gateway:/medicaid_gateway
@@ -171,8 +180,8 @@ services:
     ports:
       - "3005:3005"
     #this works for sure
-    #command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && yarn install --check-files && bin/rails server --port 3005 --binding 0.0.0.0"
-    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bin/rails server --port 3005 --binding 0.0.0.0"
+    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && yarn install --check-files && bin/rails server --port 3005 --binding 0.0.0.0"
+    #command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bin/rails server --port 3005 --binding 0.0.0.0"
 
   mitc:
     build:
@@ -201,7 +210,7 @@ services:
     image: polypress:dev-0.1.0
     volumes:
       - ../polypress:/polypress
-      - polypress_gem_cache:/usr/local/bundle/2.7.2
+      - polypress_gem_cache:/usr/local/bundle/2.7
       # - yarn_cache:/yarn
       # - node_modules_cache:/polypress/node_modules
     env_file:
@@ -214,7 +223,8 @@ services:
         condition: service_healthy
     ports:
       - "3003:3003"
-    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && yarn install --check-files && bin/rails server --port 3003 --binding 0.0.0.0"
+    #command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && yarn install --check-files && bin/rails server --port 3003 --binding 0.0.0.0"
+    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bin/rails server --port 3003 --binding 0.0.0.0"
     links:
       - mongodb
       - rabbitmq
@@ -223,7 +233,6 @@ volumes:
   fdsh_gem_cache:
   polypress_gem_cache:
   mitc_gem_cache:
-  # yarn_cache:
   node_modules_cache:
   packs_cache:
   mongodb:

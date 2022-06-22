@@ -12,7 +12,7 @@ RUN curl -sL https://deb.nodesource.com/setup_12.x | bash -
 
 RUN apt-get update \
   && apt-get -yq dist-upgrade \
-  && apt-get install -y tzdata build-essential libsodium23 nodejs vim \
+  && apt-get install -y tzdata build-essential libsodium23 git nodejs vim \
   && apt-get autoremove -y \
   && npm install --force --global yarn
 
@@ -26,7 +26,7 @@ RUN apt-get update \
 COPY . $HOME
 
 # Configure bundler and PATH
-ENV GEM_HOME="/usr/local/bundle/2.7.3"
+ENV GEM_HOME="/usr/local/bundle/2.7"
 ENV LANG=C.UTF-8 \
   BUNDLE_PATH=$GEM_HOME \
   BUNDLE_JOBS=4 \
@@ -36,5 +36,5 @@ ENV LANG=C.UTF-8 \
 RUN gem install --source "https://rubygems.org" bundler
 RUN bundle config --global frozen 1
 
-RUN cd $HOME && yarn install
 RUN cd $HOME && bundle install
+RUN cd $HOME && yarn install --check-files
