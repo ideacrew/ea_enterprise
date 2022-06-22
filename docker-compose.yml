@@ -133,7 +133,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-
     command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && bin/rails server --port 3006 --binding 0.0.0.0"
     links:
       - mongodb

@@ -31,6 +31,12 @@ the layout should look like this (you can change *projects*)
 
 Be sure all repositories are up to date with their respective release branches before running any commands!
 
+## Known issues
+
+The services fdsh_gateway, enroll has "localhost" as the "server" on config/mongoid.yml, you need to change it to "mongodb" on line 12 and 69 (16 and 175 for fdsh_gateway), but do not commit this change.
+For some reason, medicaid_gateway and polypress have the correct name on config/mongoid.yml. No need to update there.
+
+
 ## Basic Docker Compose Commands
 Note: commands must be run in the terminal from inside the ea_enterprise directory.
 
@@ -84,10 +90,6 @@ docker-compose run -e "RAILS_ENV=test" enroll bundle exec rspec components/finan
 bin/rails c
 ``
 
-## Known issues
-
-There is an issue on my mac it doesn't connect to mongo via localhost, you need to change this on mongoid.yml but don't commit it.
-
 ## when you need to restart the container
 
 Very similar to the rules regarding when to restart a rails application 
@@ -109,5 +111,6 @@ Very similar to the rules regarding when to restart a rails application
 
 - why the shell inside the container doesn't respond to the arrows or any other shell nicety? (usually, this happens when using the docker UI) it's because it's executing /bin/sh, you can execute /bin/bash as soon as the terminal is open
 
+## TODO
 
-
+- fix/add the nginx in front of the services that has them on production
