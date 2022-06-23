@@ -33,7 +33,7 @@ Be sure all repositories are up to date with their respective release branches b
 
 ## Known issues
 
-The services `fdsh_gateway`, `enroll` has "localhost" as the "server" on config/mongoid.yml, you need to change it to "MongoDB" on lines 12 and 69 (16 and 175 for fdsh_gateway), but **DO NOT COMMIT** this change.
+The services `fdsh_gateway`, `enroll` has "localhost" as the "server" on config/mongoid.yml, you need to change it to "mongodb" on lines 12 and 69 (16 and 175 for fdsh_gateway), but **DO NOT COMMIT** this change.
 For some reason, medicaid_gateway and polypress have the correct name on config/mongoid.yml. No need to update there.
 
 
