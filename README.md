@@ -103,6 +103,8 @@ Very similar to the rules regarding when to restart a rails application
 
 Some people complain about "writing" speed, and it's true, it's slow, however on the "experimental features", there is a new option called "VirtioFS" and its fast, close to native fast, our recommendation is to enable it
 
+<img width="1090" alt="Screen Shot 2022-07-15 at 1 27 05 PM" src="https://user-images.githubusercontent.com/350422/179311143-090ab646-3b6d-441a-ba0b-cefc4d5de1d0.png">
+
 ## FAQ
 
 - how do I enter the rails console? use `docker exec -it <container name>` /bin/bash, or via the UI there is a button to do this quickly
