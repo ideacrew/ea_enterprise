@@ -99,6 +99,10 @@ Very similar to the rules regarding when to restart a rails application
 - you changed anything docker-compose.yml file
 - you changed the Dockerfile of any container
 
+## recommendations 
+
+Some people complain about "writing" speed, and it's true, it's slow, however on the "experimental features", there is a new option called "VirtioFS" and its fast, close to native fast, our recommendation is to enable it
+
 ## FAQ
 
 - how do I enter the rails console? use `docker exec -it <container name>` /bin/bash, or via the UI there is a button to do this quickly

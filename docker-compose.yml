@@ -14,10 +14,10 @@ services:
       - 27017:27017
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongo mongodb:27017/test --quiet
-      interval: 1s
-      timeout: 5s
-      retries: 30
-      start_period: 20s
+      # interval: 1s
+      # timeout: 5s
+      # retries: 30
+      # start_period: 20s
 
   rabbitmq:
     image: rabbitmq:3.8-management
@@ -35,9 +35,9 @@ services:
       - 15672:15672
     healthcheck:
       test: rabbitmq-diagnostics check_port_connectivity
-      interval: 1s
-      timeout: 3s
-      retries: 30
+      # interval: 1s
+      # timeout: 3s
+      # retries: 30
 
 
   redis:
@@ -54,17 +54,48 @@ services:
   # Reverse proxies:
   #
 
-  mcgw_nginx:
-    image: nginx:1.22
+  # mcgw_nginx:
+  #   image: nginx:1.22
+  #   volumes:
+  #     - ${PWD}/site/mcgw_nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+  #   depends_on:
+  #     medicaid_gateway:
+  #       condition: service_started
+  #   links:
+  #     - medicaid_gateway
+  #   ports:
+  #     - 3030:3030
+
+  # helpers
+
+  enroll_helper:
+    build:
+      context: ../enroll
+      dockerfile: ../ea_enterprise/site/enroll_service/Dockerfile
+      args:
+        BUNDLER_VERSION_OVERRIDE: '2.2.12'
+    image: enrollhelper:dev-0.1.0
+    environment:
+      - SHELL=/bin/bash
     volumes:
-      - ${PWD}/site/mcgw_nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../enroll:/enroll
+      - enroll_gem_cache:/usr/local/bundle/2.5
+      - enroll_node_modules_cache:/enroll/node_modules
+      - enroll_packs_cache:/enroll/public/packs
+      - enroll_assets_cache:/enroll/public/assets
+      - enroll_rails_cache:/enroll/tmp/cache
+    env_file:
+      - ./site/.env.dev
+      - ./site/rabbitmq/rabbitmq.dev.env
     depends_on:
-      medicaid_gateway:
-        condition: service_started
+      enroll:
+        condition: service_healthy
     links:
+      - mongodb
+      - fdsh_gateway
       - medicaid_gateway
-    ports:
-      - 3030:3030
+      - polypress
+    command: bash -c "bin/webpack && bundle exec rake 'seed:translations[db/seedfiles/english_translations_seed.rb]'"
 
 
   #
@@ -84,8 +115,9 @@ services:
       - ../enroll:/enroll
       - enroll_gem_cache:/usr/local/bundle/2.5
       - enroll_node_modules_cache:/enroll/node_modules
-      # - enroll_packs_cache:/enroll/public/packs
+      - enroll_packs_cache:/enroll/public/packs
       - enroll_rails_cache:/enroll/tmp/cache
+      - enroll_assets_cache:/enroll/public/assets
     env_file:
       - ./site/.env.dev
       - ./site/rabbitmq/rabbitmq.dev.env
@@ -96,6 +128,10 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: curl --fail http://localhost:3000 || exit 1
+      start_period: 60s # yes, enroll takes forever to load
+
     links:
       - mongodb
       - fdsh_gateway
@@ -113,6 +149,8 @@ services:
     # command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && CLIENT=me bin/rails server --port 3000 --binding 0.0.0.0"
     # DC / new stykle!
     command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bin/webpack && CLIENT=dc bin/rails server --port 3000 --binding 0.0.0.0"
+
+    #bundle exec rake 'seed:translations[db/seedfiles/english_translations_seed.rb]' <-- how do we add this ???? it takes too long ...
 
 
   fdsh_gateway:
@@ -248,4 +286,5 @@ volumes:
   enroll_node_modules_cache:
   enroll_packs_cache:
   enroll_rails_cache:
+  enroll_assets_cache:
 
