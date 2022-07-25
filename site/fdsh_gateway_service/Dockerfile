@@ -1,4 +1,4 @@
-FROM ruby:2.7.2
+FROM ruby:2.7.3
 
 LABEL author="IdeaCrew"
 
@@ -10,14 +10,14 @@ RUN curl -sL https://deb.nodesource.com/setup_12.x | bash -
 
 RUN apt-get update \
   && apt-get -yq dist-upgrade \
-  && apt-get install -y tzdata build-essential nodejs vim \
+  && apt-get install -y tzdata build-essential libsodium23 nodejs vim \
   && apt-get autoremove -y \
   && npm install --force --global yarn
 
 COPY . $HOME
 
 # Configure bundler and PATH
-ENV GEM_HOME="/usr/local/bundle/2.7.2"
+ENV GEM_HOME="/usr/local/bundle/2.7.3"
 ENV LANG=C.UTF-8 \
   BUNDLE_PATH=$GEM_HOME \
   BUNDLE_JOBS=4 \
