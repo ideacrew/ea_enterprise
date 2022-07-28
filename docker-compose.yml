@@ -87,6 +87,7 @@ services:
     env_file:
       - ./site/.env.dev
       - ./site/rabbitmq/rabbitmq.dev.env
+      - env.dev
     depends_on:
       enroll:
         condition: service_healthy
@@ -121,6 +122,7 @@ services:
     env_file:
       - ./site/.env.dev
       - ./site/rabbitmq/rabbitmq.dev.env
+      - env.dev
     depends_on:
       mongodb:
         condition: service_started
@@ -130,7 +132,7 @@ services:
         condition: service_healthy
     healthcheck:
       test: curl --fail http://localhost:3000 || exit 1
-      start_period: 60s # yes, enroll takes forever to load
+      start_period: 70s # yes, enroll takes forever to load
 
     links:
       - mongodb
@@ -139,18 +141,8 @@ services:
       - polypress
     ports:
       - "3000:3000"
-    # this works for sure bin/webpack-dev-server && 
-    #command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && CLIENT=dc bin/rails server --port 3000 --binding 0.0.0.0"
-    # DC !
-    #command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids &&bundle exec rake configuration:client_configuration_toggler client=dc && bin/rails server --port 3000 --binding 0.0.0.0"
-    # Maine !
-    # command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle exec rake configuration:client_configuration_toggler client=me && bin/rails server --port 3000 --binding 0.0.0.0"
-    # ME / new stykle!
-    # command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && CLIENT=me bin/rails server --port 3000 --binding 0.0.0.0"
-    # DC / new stykle!
-    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bin/webpack && CLIENT=dc bin/rails server --port 3000 --binding 0.0.0.0"
-
-    #bundle exec rake 'seed:translations[db/seedfiles/english_translations_seed.rb]' <-- how do we add this ???? it takes too long ...
+    # one line to rule them all, change the client on env.dev file :)
+    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids  && bundle exec rake configuration:client_configuration_toggler && bin/rails server --port 3000 --binding 0.0.0.0"
 
 
   fdsh_gateway:
