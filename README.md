@@ -82,7 +82,7 @@ RAILS_ENV=test bundle exec rspec components/financial_assistance/spec/
 
 - run test outside the container (cd to ea_enterprise first):
 ```
-docker-compose run -e "RAILS_ENV=test" enroll bundle exec rspec components/financial_assistance/spec/
+docker-compose run -e "RAILS_ENV=test" enroll rspec components/financial_assistance/spec/
 ```
 
 - open rails console (inside the container):
@@ -99,9 +99,33 @@ Very similar to the rules regarding when to restart a rails application
 - you changed anything docker-compose.yml file
 - you changed the Dockerfile of any container
 
+## cucumber
+
+It is possible to run cucumber, however, there are 2 drawbacks; first is that the gem webdrivers have to be removed manually and trigger a container rebuild (it can be enroll alone with `docker build enroll`), and the drawback is that it uses a "modified" env.rb that removes all the references to the webdriver gem, this is done automatically via a virtual volume on docker-compose.
+
+These are the steps to enable cucumber 
+
+1. On enroll edit the Gemfile and remove: `gem 'webdrivers', '~> 3.0'`
+2. Trigger a rebuild for enroll with 
+```
+docker-compose build enroll
+```
+3. run cucumber
+    - form inside the container (attach a shell to the container first)
+```
+NODE_ENV=test RAILS_ENV=test  cucumber features/financial_assistance/view_eligibility.feature
+```
+    - from outside the container (inside the ea_enterprise directory): 
+```
+docker-compose run -e "RAILS_ENV=test" enroll cucumber features/financial_assistance/view_eligibility.feature
+
+```
+
+After rebuilder the container, only step 3 is needed
+
 ## recommendations 
 
-Some people complain about "writing" speed, and it's true, it's slow, however on the "experimental features", there is a new option called "VirtioFS" and its fast, close to native fast, our recommendation is to enable it
+Some people complain about "writing" speed, and it's true, it's slow, however on the "experimental features", there is a new option called "VirtioFS" and it's fast, close to native fast, our recommendation is to enable it
 
 <img width="1090" alt="Screen Shot 2022-07-15 at 1 27 05 PM" src="https://user-images.githubusercontent.com/350422/179311143-090ab646-3b6d-441a-ba0b-cefc4d5de1d0.png">
 

@@ -79,7 +79,7 @@ services:
       - SHELL=/bin/bash
     volumes:
       - ../enroll:/enroll
-      - enroll_gem_cache:/usr/local/bundle/2.5
+      # - enroll_gem_cache:/usr/local/bundle/2.5
       - enroll_node_modules_cache:/enroll/node_modules
       - enroll_packs_cache:/enroll/public/packs
       - enroll_assets_cache:/enroll/public/assets
@@ -98,7 +98,6 @@ services:
       - polypress
     command: bash -c "bin/webpack && bundle exec rake 'seed:translations[db/seedfiles/english_translations_seed.rb]'"
 
-
   #
   # Microservices
   #
@@ -112,9 +111,11 @@ services:
     image: enroll:dev-0.1.0
     environment:
       - SHELL=/bin/bash
-    volumes:
+    volumes: 
+      - ${PWD}/hotpatches/cucumber_env.rb:/enroll/features/support/env.rb:ro
       - ../enroll:/enroll
-      - enroll_gem_cache:/usr/local/bundle/2.5
+      # - enroll_gem_cache:/usr/local/bundle/2.5
+      # the cahe is now on /usr/local/bundle/gems/
       - enroll_node_modules_cache:/enroll/node_modules
       - enroll_packs_cache:/enroll/public/packs
       - enroll_rails_cache:/enroll/tmp/cache
