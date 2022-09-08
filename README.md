@@ -31,6 +31,14 @@ the layout should look like this (you can change the *projects* folder)
 
 Be sure all repositories are up to date with their respective release branches before running any commands!
 
+## important concepts
+
+- inside the container:
+
+- attach to a container:
+
+- outside the container:
+
 ## Known issues
 
 The services `fdsh_gateway`, `enroll` has "localhost" as the "server" on config/mongoid.yml, you need to change it to "mongodb" on lines 12 and 69 (16 and 175 for fdsh_gateway), but **DO NOT COMMIT** this change.
@@ -63,21 +71,37 @@ docker-compose build
 ```
 docker-compose build enroll
 ```
-- Shell in a container
+- Shell inside a container
 ```
-docker-compose run enroll /bin/bash
+docker-compose exec enroll /bin/bash
 ```
-- Rubocop on **enroll**
+- Rubocop inside **enroll**
 ```
-docker-compose run enroll /enroll/rubocop_check_last_commit.sh
+docker-compose exec enroll /enroll/rubocop_check_last_commit.sh
 ```
 ```
-docker-compose run enroll /enroll/rubocop_check_pre_commit.sh
+docker-compose exec enroll /enroll/rubocop_check_pre_commit.sh
 ```
+
+## restoring a database 
+
+Make sure mogo is running
+
+```
+cd ea_enterprise
+docker-compose cp ~/projects/dumps/super_dump/ mongodb:/dump
+docker-compose exec mongodb mongorestore
+```
+
 ## Basic rails commands
+- start a console (from outside, to the container)
+```
+docker-compose exec enroll rails c
+```
+
 - run tests (inside the container): 
 ```
-RAILS_ENV=test bundle exec rspec components/financial_assistance/spec/
+RAILS_ENV=test rspec components/financial_assistance/spec/
 ```
 
 - run test outside the container (cd to ea_enterprise first):
@@ -101,7 +125,7 @@ Very similar to the rules regarding when to restart a rails application
 
 ## cucumber
 
-It is possible to run cucumber, however, there are 2 drawbacks; first is that the gem webdrivers have to be removed manually and trigger a container rebuild (it can be enroll alone with `docker build enroll`), and the drawback is that it uses a "modified" env.rb that removes all the references to the webdriver gem, this is done automatically via a virtual volume on docker-compose.
+It is possible to run cucumber, however, there are 2 drawbacks; first is that the gem webdrivers have to be removed manually and trigger a container rebuild (it can be enroll alone with `docker build enroll`), and the second drawback is that it uses a "modified" env.rb that removes all the references to the webdriver gem, this is done automatically via a virtual volume on docker-compose (as end user you dont need to worry about this unless something big changes on cucumber).
 
 These are the steps to enable cucumber 
 
@@ -111,7 +135,7 @@ These are the steps to enable cucumber
 docker-compose build enroll
 ```
 3. run cucumber
-    - form inside the container (attach a shell to the container first)
+    - from inside the container (attach a shell to the container first)
 ```
 NODE_ENV=test RAILS_ENV=test  cucumber features/financial_assistance/view_eligibility.feature
 ```
@@ -121,7 +145,11 @@ docker-compose run -e "RAILS_ENV=test" enroll cucumber features/financial_assist
 
 ```
 
-After rebuilder the container, only step 3 is needed
+After rebuilding the container for the first time, only step 3 is needed
+
+## common issues and how to solve them
+
+
 
 ## recommendations 
 

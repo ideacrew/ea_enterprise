@@ -17,12 +17,12 @@ RUN apt-get update \
 COPY . $HOME
 
 # Configure bundler and PATH
-ENV GEM_HOME="/usr/local/bundle/2.7"
-ENV LANG=C.UTF-8 \
-  BUNDLE_PATH=$GEM_HOME \
-  BUNDLE_JOBS=4 \
-  BUNDLE_RETRY=3 \
-  PATH=$GEM_HOME/bin:$GEM_HOME/gems/bin:$PATH
+# ENV GEM_HOME="/usr/local/bundle/2.7"
+# ENV LANG=C.UTF-8 \
+#   BUNDLE_PATH=$GEM_HOME \
+#   BUNDLE_JOBS=4 \
+#   BUNDLE_RETRY=3 \
+#   PATH=$GEM_HOME/bin:$GEM_HOME/gems/bin:$PATH
 
 RUN gem install --source "https://rubygems.org" bundler
 #RUN bundle config --global frozen 1

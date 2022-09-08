@@ -84,6 +84,7 @@ services:
       - enroll_packs_cache:/enroll/public/packs
       - enroll_assets_cache:/enroll/public/assets
       - enroll_rails_cache:/enroll/tmp/cache
+      - ../aca_entities:/aca_entitites
     env_file:
       - ./site/.env.dev
       - ./site/rabbitmq/rabbitmq.dev.env
@@ -120,6 +121,7 @@ services:
       - enroll_packs_cache:/enroll/public/packs
       - enroll_rails_cache:/enroll/tmp/cache
       - enroll_assets_cache:/enroll/public/assets
+      - ../aca_entities:/aca_entitites
     env_file:
       - ./site/.env.dev
       - ./site/rabbitmq/rabbitmq.dev.env
@@ -134,7 +136,6 @@ services:
     healthcheck:
       test: curl --fail http://localhost:3000 || exit 1
       start_period: 70s # yes, enroll takes forever to load
-
     links:
       - mongodb
       - fdsh_gateway
@@ -153,7 +154,8 @@ services:
     image: fdsh_gateway:dev-0.1.0
     volumes:
       - ../fdsh_gateway:/fdsh_gateway
-      - fdsh_gem_cache:/usr/local/bundle/2.7.2
+      # - fdsh_gem_cache:/usr/local/bundle/2.7.2
+      - ../aca_entities:/aca_entitites
     env_file:
       - ./site/.env.dev
       - ./site/rabbitmq/rabbitmq.dev.env
@@ -164,12 +166,48 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && bin/rails server --port 3006 --binding 0.0.0.0"
+    # command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && bin/rails server --port 3006 --binding 0.0.0.0"
+    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bin/rails server --port 3006 --binding 0.0.0.0"
     links:
       - mongodb
       - rabbitmq
     ports:
       - "3006:3006"
+
+  medicaid_gateway_helper:
+    build:
+      context: ../medicaid_gateway
+      dockerfile: ../ea_enterprise/site/medicaid_gateway_service/Dockerfile
+      #dockerfile: ../medicaid_gateway/.docker/development/Dockerfile
+      # args:
+      #     RUBY_VERSION: "2.7.2"
+      #     BUNDLER_VERSION_OVERRIDE: "2.2.14"
+      #     NODE_MAJOR: "12"
+      #     YARN_VERSION: "1.22.4"
+    image: medicaid_gateway:dev-0.1.0
+    volumes:
+      - ../medicaid_gateway:/medicaid_gateway
+      # - mcg_gem_cache:/usr/local/bundle/2.7
+      # - mcg_rails_cache:/medicaid_gateway/tmp/cache
+      #- .:/medicaid_gateway:cached
+      - mcg_rails_cache:/medicaid_gateway/tmp/cache
+      - mcg_bundle:/bundle
+      - mcg_node_modules:/medicaid_gateway/node_modules
+      - mcg_packs:/medicaid_gateway/public/packs
+    env_file:
+      - ./site/.env.dev
+      - ./site/rabbitmq/rabbitmq.dev.env
+      - ./site/medicaid_gateway_service/.env.dev
+    depends_on:
+      medicaid_gateway:
+        condition: service_healthy
+    links:
+      - mitc
+      - mongodb
+      - rabbitmq
+      - redis
+    command: bash -c "bin/webpack"
+
 
   medicaid_gateway:
     build:
@@ -184,7 +222,7 @@ services:
     image: medicaid_gateway:dev-0.1.0
     volumes:
       - ../medicaid_gateway:/medicaid_gateway
-      - mcg_gem_cache:/usr/local/bundle/2.7
+      # - mcg_gem_cache:/usr/local/bundle/2.7
       # - mcg_rails_cache:/medicaid_gateway/tmp/cache
       #- .:/medicaid_gateway:cached
       - mcg_rails_cache:/medicaid_gateway/tmp/cache
@@ -195,6 +233,7 @@ services:
       - ./site/.env.dev
       - ./site/rabbitmq/rabbitmq.dev.env
       - ./site/medicaid_gateway_service/.env.dev
+      - env.dev
     depends_on:
       mongodb:
         condition: service_started
@@ -209,9 +248,12 @@ services:
       - redis
     ports:
       - "3005:3005"
+    healthcheck:
+      test: curl --fail http://localhost:3005 || exit 1
+      start_period: 20s 
     #this works for sure
-    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && yarn install --check-files && bin/rails server --port 3005 --binding 0.0.0.0"
-    #command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bin/rails server --port 3005 --binding 0.0.0.0"
+    # command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && yarn install --check-files && bin/rails server --port 3005 --binding 0.0.0.0"
+    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bin/rails server --port 3005 --binding 0.0.0.0"
 
   mitc:
     build:
