@@ -39,11 +39,11 @@ Be sure all repositories are up to date with their respective release branches b
 
 - outside the container:
 
-## Known issues
+## Known workarounds
 
-The services `fdsh_gateway`, `enroll` has "localhost" as the "server" on config/mongoid.yml, you need to change it to "mongodb" on lines 12 and 69 (16 and 175 for fdsh_gateway), but **DO NOT COMMIT** this change.
-For some reason, medicaid_gateway and polypress have the correct name on config/mongoid.yml. No need to update there.
+The services `fdsh_gateway`, `enroll` has "localhost" as the "server" on config/mongoid.yml, the docker-compose configuration "patches" this by mounting anther configuration, the "patched" configuration is located at `config/mongoid.yml.docker` and is mounted on the container at `/{APP}/config/mongoid.yml`
 
+Local aca_entites: it 
 
 ## Basic Docker Compose Commands
 Note: commands must be run in the terminal from inside the ea_enterprise directory.
@@ -148,7 +148,11 @@ docker-compose run -e "RAILS_ENV=test" enroll cucumber features/financial_assist
 After rebuilding the container for the first time, only step 3 is needed
 
 ## common issues and how to solve them
-
+- rspec 
+```
+  uninitialized constant Mongoid::Matchers
+```
+you are not running the specs on test environment, run them with `RAILS_ENV=test rspec`
 
 
 ## recommendations 

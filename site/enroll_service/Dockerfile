@@ -65,7 +65,7 @@ RUN chmod +x /usr/local/bin/hackedchromedriver
 # RUN bundle config --global frozen 1
 
 RUN gem install bundler -v 2.3.16
-RUN gem update --system 
+# RUN gem update --system 
 
 COPY . $HOME
 # RUN sed -i '/webdrivers/d' Gemfile
@@ -76,4 +76,6 @@ COPY . $HOME
 #&& yarn install --check-files
 RUN cd $HOME && bundle install
 RUN cd $HOME && yarn install --network-timeout 100000 
+RUN cd $HOME && npx browserslist@latest --update-db
+RUN cd $HOME/components/benefit_markets && bundle install
 

@@ -25,7 +25,9 @@ ENV LANG=C.UTF-8 \
   BUNDLE_RETRY=3 \
   PATH=$GEM_HOME/bin:$GEM_HOME/gems/bin:$PATH
 
-RUN gem install --source "https://rubygems.org" bundler
+# RUN gem install --source "https://rubygems.org" bundler
+RUN gem install bundler -v 1.17.3
+
 RUN bundle config --global frozen 1
 
 RUN cd $APP_HOME && bundle install
