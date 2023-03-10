@@ -89,7 +89,7 @@ Make sure mogo is running
 
 ```
 cd ea_enterprise
-docker-compose cp ~/projects/dumps/super_dump/ mongodb:/dump
+docker compose cp ~/projects/dumps/super_dump/ mongodb:/dump
 docker-compose exec mongodb mongorestore
 ```
 
