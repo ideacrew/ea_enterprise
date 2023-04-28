@@ -1,10 +1,12 @@
-FROM ruby:2.3
+FROM ruby:2.3-stretch
 
 LABEL author="IdeaCrew"
 
 ENV APP_HOME /mitc
 RUN mkdir -p $APP_HOME
 WORKDIR $APP_HOME
+
+RUN echo "deb http://archive.debian.org/debian stretch main" > /etc/apt/sources.list
 
 RUN curl -sL https://deb.nodesource.com/setup_12.x | bash -
 
