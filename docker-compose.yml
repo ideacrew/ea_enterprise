@@ -263,8 +263,8 @@ services:
       interval: 3m
     #this works for sure
     # command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && yarn install --check-files && bin/rails server --port 3005 --binding 0.0.0.0"
-    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bin/rails server --port 3005 --binding 0.0.0.0"
-
+    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bin/rails dev:cache && bin/rails server --port 3005 --binding 0.0.0.0"
+    
   mitc:
     build:
       context: ../medicaid_eligibility
