@@ -43,7 +43,12 @@ Be sure all repositories are up to date with their respective release branches b
 
 The services `fdsh_gateway`, `enroll` has "localhost" as the "server" on config/mongoid.yml, the docker-compose configuration "patches" this by mounting anther configuration, the "patched" configuration is located at `config/mongoid.yml.docker` and is mounted on the container at `/{APP}/config/mongoid.yml`
 
-Local aca_entites: it 
+Local aca_entites: it is already mounted and can be changed on the gemfile, the trick is just to restart enroll;
+1. docker-compose up
+2. wait
+3. modify the gemfile point to gem 'aca_entities' path: "/aca_entities"
+4. restart just enroll via the ui or command line *(do not restart everything)*
+
 
 ## Basic Docker Compose Commands
 Note: commands must be run in the terminal from inside the ea_enterprise directory.
@@ -125,7 +130,7 @@ Very similar to the rules regarding when to restart a rails application
 
 ## cucumber
 
-It is possible to run cucumber, however, there are 2 drawbacks; first is that the gem webdrivers have to be removed manually and trigger a container rebuild (it can be enroll alone with `docker build enroll`), and the second drawback is that it uses a "modified" env.rb that removes all the references to the webdriver gem, this is done automatically via a virtual volume on docker-compose (as end user you dont need to worry about this unless something big changes on cucumber).
+It is possible to run cucumber, however, there are 2 drawbacks; first is that the gem webdrivers have to be removed manually and trigger a container rebuild (it can be enroll alone with `docker build enroll`), and the second drawback is that it uses a "modified" env.rb that removes all the references to the webdriver gem, this is done automatically via a virtual volume on docker-compose (as end user you don't need to worry about this unless something big changes on cucumber).
 
 These are the steps to enable cucumber 
 
@@ -157,7 +162,7 @@ you are not running the specs on test environment, run them with `RAILS_ENV=test
 
 ## recommendations 
 
-Some people complain about "writing" speed, and it's true, it's slow, however on the "experimental features", there is a new option called "VirtioFS" and it's fast, close to native fast, our recommendation is to enable it
+Some people complain about "writing" speed, and it's true, it's slow, however on the "experimental features", there is a new option called "VirtioFS" and it's fast, close to native fast, the recommendation is to enable it
 
 <img width="1090" alt="Screen Shot 2022-07-15 at 1 27 05 PM" src="https://user-images.githubusercontent.com/350422/179311143-090ab646-3b6d-441a-ba0b-cefc4d5de1d0.png">
 
