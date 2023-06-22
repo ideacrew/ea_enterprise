@@ -52,7 +52,7 @@ The services `fdsh_gateway`, `enroll` has "localhost" as the "server" on config/
 Local aca_entites: it is already mounted and can be changed on the gemfile, the trick is just to restart enroll;
 1. docker-compose up
 2. wait
-3. modify the gemfile point to gem 'aca_entities', path: "/aca_entities"
+3. modify the gemfile point to a file path `gem 'aca_entities', path: "/aca_entities"`
 4. restart just enroll via the ui or command line *(do not restart everything)*
 
 
