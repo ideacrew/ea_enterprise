@@ -21,6 +21,7 @@ Ensure the other repositories are present on your local machine and at the same 
 - fdsh_gateway
 - medicaid_gateway
 - medicaid_eligibility
+- aca_entities
 - polypress
 
 the layout should look like this (you can change the *projects* folder)
@@ -95,7 +96,7 @@ docker-compose exec enroll /enroll/rubocop_check_pre_commit.sh
 
 - docker-compose "exec vs run"
 
-The slight difference between exec and run is that run will create a new container, and exec will run the command on an existing container;
+The slight difference between exec and run is that run will create a new container, and exec will run the command on an existing container, examples;
 
 1. this will execute /bin/bash under the *running* container enroll, if there is no enroll running, the command will fail
 
