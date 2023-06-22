@@ -1,5 +1,5 @@
 # ea_enterprise
-Collection of containers to run Enroll in a development context
+Collection of containers to run the Enroll ecosystem in a development context
 
 ## Getting Started
 
@@ -31,6 +31,7 @@ the layout should look like this (you can change the *projects* folder)
     ├── enroll
     ├── fdsh_gateway
     ├── medicaid_gateway
+    ├── aca_entities
     └── polypress
 
 ```
@@ -39,11 +40,9 @@ Be sure all repositories are up to date with their respective release branches b
 
 ## important concepts
 
-- inside the container:
+- inside the container: this means we will run a command inside the container, for example, `docker-compose exec enroll /bin/bash` will run the command `/bin/bash` inside the container `enroll` from there we can execute any command that is available inside the container, for example, `rails c` will open a rails console inside the container
 
-- attach to a container:
-
-- outside the container:
+- outside the container: this means we will run a command on the "host", usually in the context of the developer's Mac.
 
 ## Known workarounds
 
@@ -52,7 +51,7 @@ The services `fdsh_gateway`, `enroll` has "localhost" as the "server" on config/
 Local aca_entites: it is already mounted and can be changed on the gemfile, the trick is just to restart enroll;
 1. docker-compose up
 2. wait
-3. modify the gemfile point to gem 'aca_entities' path: "/aca_entities"
+3. modify the gemfile point to gem 'aca_entities', path: "/aca_entities"
 4. restart just enroll via the ui or command line *(do not restart everything)*
 
 
@@ -94,9 +93,24 @@ docker-compose exec enroll /enroll/rubocop_check_last_commit.sh
 docker-compose exec enroll /enroll/rubocop_check_pre_commit.sh
 ```
 
+- docker-compose "exec vs run"
+
+The slight difference between exec and run is that run will create a new container, and exec will run the command on an existing container;
+
+1. this will execute /bin/bash under the *running* container enroll, if there is no enroll running, the command will fail
+
+```
+docker-compose exec enroll /bin/bash
+```
+2. this will create a new container and inside it will execute /bin/bash, if there is a container running, it will not be affected and create a new one in parallel, if there is no enroll running it will not fail
+
+```
+docker-compose run enroll /bin/bash
+```
+
 ## restoring a database 
 
-Make sure mogo is running
+Make sure Mongo is running
 
 ```
 cd ea_enterprise
