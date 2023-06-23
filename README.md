@@ -49,7 +49,8 @@ Be sure all repositories are up to date with their respective release branches b
 
 The services `fdsh_gateway`, `enroll` has "localhost" as the "server" on config/mongoid.yml, the docker-compose configuration "patches" this by mounting anther configuration, the "patched" configuration is located at `config/mongoid.yml.docker` and is mounted on the container at `/{APP}/config/mongoid.yml`
 
-Local aca_entites: it is already mounted and can be changed on the gemfile, the trick is just to restart enroll;
+"Local aca_entites: it is already mounted and can be changed on the Gemfile, the trick is just to restart the service you are working with (i.e., restart only Enroll if you are updating Enroll's Gemfile)."
+
 1. docker-compose up
 2. wait
 3. modify the gemfile point to a file path `gem 'aca_entities', path: "/aca_entities"`
