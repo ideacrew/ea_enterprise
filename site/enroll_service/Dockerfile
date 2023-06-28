@@ -32,48 +32,16 @@ RUN apt-get update \
   libxcomposite1 -y \
   chromium chromium-driver
 
-# ARG USER_ID
-# ARG GROUP_ID
-
-# RUN addgroup --gid $GROUP_ID user
-# RUN adduser --disabled-password --gecos '' --uid $USER_ID --gid $GROUP_ID user
-# RUN chown -R user:user $HOME
-
-# RUN curl -L -o google-chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-# RUN dpkg -i google-chrome.deb
-# RUN sed -i 's|HERE/chrome\"|HERE/chrome\" --disable-setuid-sandbox|g' /opt/google/chrome/google-chrome
-# RUN rm google-chrome.deb
-
-# COPY . $HOME
-
-# Configure bundler and PATH
-# ENV GEM_HOME="/usr/local/bundle/2.5"
 ENV LANG=C.UTF-8 \
-  # BUNDLE_PATH=$GEM_HOME \
-  # BUNDLE_JOBS=4 \
-  # BUNDLE_RETRY=3 \
   SHELL=/bin/bash 
-  # PATH=$GEM_HOME/bin:$GEM_HOME/gems/bin:$PATH
 
 RUN echo 'chromedriver $@ --whitelisted-ips' > /usr/local/bin/hackedchromedriver
 
 RUN chmod +x /usr/local/bin/hackedchromedriver
 
-# ARG BUNDLER_VERSION_OVERRIDE
-# ENV BUNDLER_VERSION=$BUNDLER_VERSION_OVERRIDE
-# RUN gem update --system && gem install bundler:$BUNDLER_VERSION
-# RUN bundle config --global frozen 1
-
 RUN gem install bundler -v 2.3.16
-# RUN gem update --system 
 
 COPY . $HOME
-# RUN sed -i '/webdrivers/d' Gemfile
-
-
-# RUN ls -ltr /enroll/public/
-# RUN ls -ltr /enroll/node_modules/
-#&& yarn install --check-files
 RUN cd $HOME && bundle install
 RUN cd $HOME && yarn install --network-timeout 100000 
 RUN cd $HOME && npx browserslist@latest --update-db

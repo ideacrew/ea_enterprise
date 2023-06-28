@@ -17,7 +17,6 @@ RUN apt-get update \
   && npm install --force --global yarn
 
 COPY . $APP_HOME
-# ADD Gemfile* $APP_HOME/
 
 # Configure bundler and PATH
 ENV GEM_HOME="/usr/local/bundle/2.3"
@@ -27,7 +26,6 @@ ENV LANG=C.UTF-8 \
   BUNDLE_RETRY=3 \
   PATH=$GEM_HOME/bin:$GEM_HOME/gems/bin:$PATH
 
-# RUN gem install --source "https://rubygems.org" bundler
 RUN gem install bundler -v 1.17.3
 
 RUN bundle config --global frozen 1

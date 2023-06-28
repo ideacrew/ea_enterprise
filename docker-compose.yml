@@ -7,7 +7,7 @@ services:
   mongodb:
     image: mongo:4.2
     hostname: mongodb
-    mem_limit: 4000m #trying to replicate mongo memory on prod
+    #mem_limit: 4000m #uncomment this if you want to replicate mongo memory on prod
     volumes:
       - mongodb:/data/db
       - mongodb_config:/data/configdb
@@ -15,10 +15,6 @@ services:
       - 27017:27017
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongo mongodb:27017/test --quiet
-      # interval: 1s
-      # timeout: 5s
-      # retries: 30
-      # start_period: 20s
 
   rabbitmq:
     image: rabbitmq:3.8-management
@@ -36,13 +32,9 @@ services:
       - 15672:15672
     healthcheck:
       test: rabbitmq-diagnostics check_port_connectivity
-      # interval: 1s
-      # timeout: 3s
-      # retries: 30
 
 
   redis:
-    # hostname: redis
     image: redis:7.0
     ports:
       - 6379
@@ -52,7 +44,8 @@ services:
       test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
 
   #
-  # Reverse proxies:
+  # Reverse proxy for medicaid_gateway:
+  # uncomment this or tweak it to your need to replicate an extreme issue with the load balancer
   #
 
   # mcgw_nginx:
@@ -67,8 +60,6 @@ services:
   #   ports:
   #     - 3030:3030
 
-  # helpers
-
   enroll_helper:
     build:
       context: ../enroll
@@ -81,7 +72,6 @@ services:
     volumes:
       - ../enroll:/enroll
       - ${PWD}/hotpatches/mongoid-enroll.yml:/enroll/config/mongoid.yml:ro
-      # - enroll_gem_cache:/usr/local/bundle/2.5
       - enroll_node_modules_cache:/enroll/node_modules
       - enroll_packs_cache:/enroll/public/packs
       - enroll_assets_cache:/enroll/public/assets
@@ -117,10 +107,6 @@ services:
       - ${PWD}/hotpatches/cucumber_env.rb:/enroll/features/support/env.rb:ro
       - ${PWD}/hotpatches/mongoid-enroll.yml:/enroll/config/mongoid.yml:ro
       - ${PWD}/hotpatches/mongoid-enroll.yml:/enroll/components/financial_assistance/spec/dummy/config/mongoid.yml:ro
-      # - ${PWD}/hotpatches/Gemfile-enroll-FA-spec:/enroll/components/financial_assistance/Gemfile:ro
-      # - ${PWD}/hotpatches/Gemfile-enroll-FA-spec:/enroll/components/benefit_markets/Gemfile:ro
-      # - enroll_gem_cache:/usr/local/bundle/2.5
-      # the cahe is now on /usr/local/bundle/gems/
       - enroll_node_modules_cache:/enroll/node_modules
       - enroll_packs_cache:/enroll/public/packs
       - enroll_rails_cache:/enroll/tmp/cache
@@ -140,7 +126,7 @@ services:
         condition: service_healthy
     healthcheck:
       test: curl --fail http://localhost:3002 || exit 1
-      start_period: 70s # yes, enroll takes forever to load
+      start_period: 70s # yes, enroll takes forever to load, tweak it further if you need to
       interval: 3m
     links:
       - mongodb
@@ -149,7 +135,7 @@ services:
       - polypress
     ports:
       - "3002:3002"
-    # one line to rule them all, change the client on env.dev file :)
+    # don't set CLIENT here, change it on env.dev file :)
     command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids  && bundle exec rake configuration:client_configuration_toggler && bin/rails server --port 3002 --binding 0.0.0.0"
 
 
@@ -161,7 +147,6 @@ services:
     volumes:
       - ../fdsh_gateway:/fdsh_gateway
       - ${PWD}/hotpatches/mongoid-fdsh.yml:/fdsh_gateway/config/mongoid.yml:ro
-      # - fdsh_gem_cache:/usr/local/bundle/2.7.2
       - ../aca_entities:/aca_entities
       - ../event_source:/event_source
     env_file:
@@ -174,7 +159,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    # command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && bin/rails server --port 3006 --binding 0.0.0.0"
     command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bin/rails server --port 3006 --binding 0.0.0.0"
     links:
       - mongodb
@@ -186,18 +170,9 @@ services:
     build:
       context: ../medicaid_gateway
       dockerfile: ../ea_enterprise/site/medicaid_gateway_service/Dockerfile
-      #dockerfile: ../medicaid_gateway/.docker/development/Dockerfile
-      # args:
-      #     RUBY_VERSION: "2.7.2"
-      #     BUNDLER_VERSION_OVERRIDE: "2.2.14"
-      #     NODE_MAJOR: "12"
-      #     YARN_VERSION: "1.22.4"
     image: medicaid_gateway:dev-0.1.0
     volumes:
       - ../medicaid_gateway:/medicaid_gateway
-      # - mcg_gem_cache:/usr/local/bundle/2.7
-      # - mcg_rails_cache:/medicaid_gateway/tmp/cache
-      #- .:/medicaid_gateway:cached
       - mcg_rails_cache:/medicaid_gateway/tmp/cache
       - mcg_bundle:/bundle
       - mcg_node_modules:/medicaid_gateway/node_modules
@@ -221,18 +196,9 @@ services:
     build:
       context: ../medicaid_gateway
       dockerfile: ../ea_enterprise/site/medicaid_gateway_service/Dockerfile
-      #dockerfile: ../medicaid_gateway/.docker/development/Dockerfile
-      # args:
-      #     RUBY_VERSION: "2.7.2"
-      #     BUNDLER_VERSION_OVERRIDE: "2.2.14"
-      #     NODE_MAJOR: "12"
-      #     YARN_VERSION: "1.22.4"
     image: medicaid_gateway:dev-0.1.0
     volumes:
       - ../medicaid_gateway:/medicaid_gateway
-      # - mcg_gem_cache:/usr/local/bundle/2.7
-      # - mcg_rails_cache:/medicaid_gateway/tmp/cache
-      #- .:/medicaid_gateway:cached
       - mcg_rails_cache:/medicaid_gateway/tmp/cache
       - mcg_bundle:/bundle
       - mcg_node_modules:/medicaid_gateway/node_modules
@@ -261,9 +227,7 @@ services:
       test: curl --fail http://localhost:3005 || exit 1
       start_period: 20s 
       interval: 3m
-    #this works for sure
-    # command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && yarn install --check-files && bin/rails server --port 3005 --binding 0.0.0.0"
-    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bin/rails dev:cache && bin/rails server --port 3005 --binding 0.0.0.0"
+    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bin/rails server --port 3005 --binding 0.0.0.0"
     
   mitc:
     build:
@@ -283,7 +247,6 @@ services:
         condition: service_healthy
     links:
       - redis
-      # - mongodb
 
   polypress:
     build:
@@ -293,8 +256,6 @@ services:
     volumes:
       - ../polypress:/polypress
       - polypress_gem_cache:/usr/local/bundle/2.7
-      # - yarn_cache:/yarn
-      # - node_modules_cache:/polypress/node_modules
     env_file:
       - ./site/.env.dev
       - ./site/rabbitmq/rabbitmq.dev.env
@@ -305,7 +266,6 @@ services:
         condition: service_healthy
     ports:
       - "3003:3003"
-    #command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && yarn install --check-files && bin/rails server --port 3003 --binding 0.0.0.0"
     command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bin/rails server --port 3003 --binding 0.0.0.0"
     links:
       - mongodb

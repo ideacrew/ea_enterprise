@@ -16,20 +16,8 @@ RUN apt-get update \
 
 COPY . $HOME
 
-# Configure bundler and PATH
-# ENV GEM_HOME="/usr/local/bundle/2.7"
-# ENV LANG=C.UTF-8 \
-#   BUNDLE_PATH=$GEM_HOME \
-#   BUNDLE_JOBS=4 \
-#   BUNDLE_RETRY=3 \
-#   PATH=$GEM_HOME/bin:$GEM_HOME/gems/bin:$PATH
-
-# RUN gem install --source "https://rubygems.org" bundler
-#RUN bundle config --global frozen 1
-#RUN bundle config
 RUN gem install bundler -v 2.3.16
 
-#RUN cd $HOME && bundle install && bin/rails dev:cache && yarn install --check-files 
 RUN cd $HOME && yarn install --check-files 
 RUN cd $HOME && bundle install
 RUN cd $HOME && bin/rails dev:cache
