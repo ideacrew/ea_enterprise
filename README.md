@@ -47,15 +47,19 @@ Be sure all repositories are up to date with their respective release branches b
 
 ## Known workarounds
 
+- mongoid.yml:
 The services `fdsh_gateway`, `enroll` has "localhost" as the "server" on config/mongoid.yml, the docker-compose configuration "patches" this by mounting anther configuration, the "patched" configuration is located at `config/mongoid.yml.docker` and is mounted on the container at `/{APP}/config/mongoid.yml`
 
-"Local aca_entites: it is already mounted and can be changed on the Gemfile, the trick is just to restart the service you are working with (i.e., restart only Enroll if you are updating Enroll's Gemfile)."
+- local aca_entities:
+Local aca_entites: it is already mounted and can be changed on the Gemfile, the trick is just to restart the service you are working with (i.e., restart only Enroll if you are updating Enroll's Gemfile).
 
 1. docker-compose up
 2. wait
 3. modify the gemfile point to a file path `gem 'aca_entities', path: "/aca_entities"`
 4. restart just enroll via the ui or command line *(do not restart everything)*
 
+- stimulus reflex on MG
+Docker-compose will patch MG stimulus reflex initializer to ignore dev:cache not being enabled, this is done via a volume mount on the docker-compose.yml file, the file is located at `hotpatches/stimulus_reflex.rb` and is mounted on the container at `/{APP}/config/initializers/stimulus_reflex.rb`. 
 
 ## Basic Docker Compose Commands
 Note: commands must be run in the terminal from inside the ea_enterprise directory.

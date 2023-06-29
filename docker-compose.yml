@@ -204,6 +204,7 @@ services:
       - mcg_node_modules:/medicaid_gateway/node_modules
       - mcg_packs:/medicaid_gateway/public/packs
       - ../aca_entities:/aca_entities
+      - ${PWD}/hotpatches/MG-stimulus.rb:/medicaid_gateway/config/initializers/stimulus_reflex.rb
     env_file:
       - ./site/.env.dev
       - ./site/rabbitmq/rabbitmq.dev.env
