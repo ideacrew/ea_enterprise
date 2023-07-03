@@ -5,28 +5,22 @@ services:
   # Infrastructure Services
   #
   mongodb:
-    build: ./site/mongodb
+    image: mongo:4.2
     hostname: mongodb
-    restart: always
-    # environment:
-    #   # - MONGO_INITDB_DATABASE: ea_enterprise
-    #   - MONGO_INITDB_ROOT_USERNAME="root"
-    #   - MONGO_INITDB_ROOT_PASSWORD="example"
-    # networks:
-    #   - backend
+    #mem_limit: 4000m #uncomment this if you want to replicate mongo memory on prod
     volumes:
       - mongodb:/data/db
       - mongodb_config:/data/configdb
     ports:
       - 27017:27017
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo mongodb:27017/test --quiet
 
   rabbitmq:
-    build: ./site/rabbitmq
+    image: rabbitmq:3.8-management
     hostname: rabbitmq
     env_file:
-      - ./site/rabbitmq/rabbitmq.env
-    # networks:
-    #   - backend
+      - ./site/rabbitmq/rabbitmq.dev.env
     volumes:
       - rabbitmq_etc:/etc/rabbitmq/
       - rabbitmq_data:/var/lib/rabbitmq/
@@ -36,47 +30,113 @@ services:
     ports:
       - 5672:5672
       - 15672:15672
+    healthcheck:
+      test: rabbitmq-diagnostics check_port_connectivity
+
 
   redis:
-    build: ./site/redis
-    hostname: redis
+    image: redis:7.0
+    ports:
+      - 6379
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
 
   #
-  # Microservices
+  # Reverse proxy for medicaid_gateway:
+  # uncomment this or tweak it to your need to replicate an extreme issue with the load balancer
   #
-  enroll:
+
+  # mcgw_nginx:
+  #   image: nginx:1.22
+  #   volumes:
+  #     - ${PWD}/site/mcgw_nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+  #   depends_on:
+  #     medicaid_gateway:
+  #       condition: service_started
+  #   links:
+  #     - medicaid_gateway
+  #   ports:
+  #     - 3030:3030
+
+  enroll_helper:
     build:
       context: ../enroll
       dockerfile: ../ea_enterprise/site/enroll_service/Dockerfile
       args:
         BUNDLER_VERSION_OVERRIDE: '2.2.12'
     image: enroll:dev-0.1.0
+    environment:
+      - SHELL=/bin/bash
     volumes:
       - ../enroll:/enroll
-      - gem_cache:/usr/local/bundle/2.5
-      - node_modules_cache:/enroll/node_modules
-      - packs_cache:/enroll/public/packs
+      - ${PWD}/hotpatches/mongoid-enroll.yml:/enroll/config/mongoid.yml:ro
+      - enroll_node_modules_cache:/enroll/node_modules
+      - enroll_packs_cache:/enroll/public/packs
+      - enroll_assets_cache:/enroll/public/assets
+      - enroll_rails_cache:/enroll/tmp/cache
+      - ../aca_entities:/aca_entities
     env_file:
-      - ./site/.env
-      - ./site/rabbitmq/rabbitmq.env
+      - ./site/.env.dev
+      - ./site/rabbitmq/rabbitmq.dev.env
+      - env.dev
     depends_on:
+      enroll:
+        condition: service_healthy
+    links:
       - mongodb
-      - rabbitmq
-      - redis
+      - fdsh_gateway
+      - medicaid_gateway
+      - polypress
+    command: bash -c "bin/webpack && bundle exec rake 'seed:translations[db/seedfiles/english_translations_seed.rb]'"
+
+  #
+  # Microservices
+  #
+
+  enroll:
+    build:
+      context: ../enroll
+      dockerfile: ../ea_enterprise/site/enroll_service/Dockerfile
+    image: enroll:dev-0.1.0
+    environment:
+      - SHELL=/bin/bash
+    volumes: 
+      - ../enroll:/enroll
+      - ${PWD}/hotpatches/cucumber_env.rb:/enroll/features/support/env.rb:ro
+      - ${PWD}/hotpatches/mongoid-enroll.yml:/enroll/config/mongoid.yml:ro
+      - ${PWD}/hotpatches/mongoid-enroll.yml:/enroll/components/financial_assistance/spec/dummy/config/mongoid.yml:ro
+      - enroll_node_modules_cache:/enroll/node_modules
+      - enroll_packs_cache:/enroll/public/packs
+      - enroll_rails_cache:/enroll/tmp/cache
+      - enroll_assets_cache:/enroll/public/assets
+      - ../aca_entities:/aca_entities
+      - ../event_source:/event_source
+    env_file:
+      - ./site/.env.dev
+      - ./site/rabbitmq/rabbitmq.dev.env
+      - env.dev
+    depends_on:
+      mongodb:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: curl --fail http://localhost:3002 || exit 1
+      start_period: 70s # yes, enroll takes forever to load, tweak it further if you need to
+      interval: 3m
     links:
       - mongodb
       - fdsh_gateway
       - medicaid_gateway
       - polypress
     ports:
-      - "3002:3000"
-
-    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && bin/rails server --port 3002 --binding 0.0.0.0"
-    # command: bash -c "rm -f tmp/pids/server.pid && mkdir -p tmp/pids && yarn install --check-files && bundle install && bundle exec puma -C config/puma.rb"
-    # command: bash -c "rm -f tmp/pids/server.pid && mkdir -p tmp/pids && yarn install --check-files && bundle exec rails assets:precompile && bundle exec puma -C config/puma.rb"
-    # command: bash -c "bundle exec puma -C config/puma.rb"
+      - "3002:3002"
+    # don't set CLIENT here, change it on env.dev file :)
+    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids  && bundle exec rake configuration:client_configuration_toggler && bin/rails server --port 3002 --binding 0.0.0.0"
 
 
   fdsh_gateway:
@@ -86,18 +146,53 @@ services:
     image: fdsh_gateway:dev-0.1.0
     volumes:
       - ../fdsh_gateway:/fdsh_gateway
-      - gem_cache:/usr/local/bundle/2.7.2
+      - ${PWD}/hotpatches/mongoid-fdsh.yml:/fdsh_gateway/config/mongoid.yml:ro
+      - ../aca_entities:/aca_entities
+      - ../event_source:/event_source
     env_file:
-      - ./site/.env
-      - ./site/rabbitmq/rabbitmq.env
+      - ./site/.env.dev
+      - ./site/rabbitmq/rabbitmq.dev.env
     depends_on:
+      mongodb:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bin/rails server --port 3006 --binding 0.0.0.0"
+    links:
       - mongodb
       - rabbitmq
-    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && bin/rails server --port 3006 --binding 0.0.0.0"
-    links:
-      - polypress
     ports:
       - "3006:3006"
+
+  medicaid_gateway_helper:
+    build:
+      context: ../medicaid_gateway
+      dockerfile: ../ea_enterprise/site/medicaid_gateway_service/Dockerfile
+    image: medicaid_gateway:dev-0.1.0
+    volumes:
+      - ../medicaid_gateway:/medicaid_gateway
+      - mcg_rails_cache:/medicaid_gateway/tmp/cache
+      - mcg_bundle:/bundle
+      - mcg_node_modules:/medicaid_gateway/node_modules
+      - mcg_packs:/medicaid_gateway/public/packs
+      - ${PWD}/hotpatches/MG-stimulus.rb:/medicaid_gateway/config/initializers/stimulus_reflex.rb
+
+    env_file:
+      - ./site/.env.dev
+      - ./site/rabbitmq/rabbitmq.dev.env
+      - ./site/medicaid_gateway_service/.env.dev
+    depends_on:
+      medicaid_gateway:
+        condition: service_healthy
+    links:
+      - mitc
+      - mongodb
+      - rabbitmq
+      - redis
+    command: bash -c "bundle exec rake configuration:client_configuration_toggler client='dc' && bin/webpack"
+
 
   medicaid_gateway:
     build:
@@ -106,21 +201,37 @@ services:
     image: medicaid_gateway:dev-0.1.0
     volumes:
       - ../medicaid_gateway:/medicaid_gateway
-      - gem_cache:/usr/local/bundle/2.7.2
+      - mcg_rails_cache:/medicaid_gateway/tmp/cache
+      - mcg_bundle:/bundle
+      - mcg_node_modules:/medicaid_gateway/node_modules
+      - mcg_packs:/medicaid_gateway/public/packs
+      - ../aca_entities:/aca_entities
+      - ${PWD}/hotpatches/MG-stimulus.rb:/medicaid_gateway/config/initializers/stimulus_reflex.rb
     env_file:
-      - ./site/.env
-      - ./site/rabbitmq/rabbitmq.env
-      - ./site/medicaid_gateway_service/.env
+      - ./site/.env.dev
+      - ./site/rabbitmq/rabbitmq.dev.env
+      - ./site/medicaid_gateway_service/.env.dev
+      - env.dev
     depends_on:
+      mongodb:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    links:
+      - mitc
       - mongodb
       - rabbitmq
       - redis
-    links:
-      - mitc
     ports:
       - "3005:3005"
-    command: bash -c "rm -f tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && bin/rails server --port 3005 --binding 0.0.0.0"
-
+    healthcheck:
+      test: curl --fail http://localhost:3005 || exit 1
+      start_period: 20s 
+      interval: 3m
+    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bin/rails server --port 3005 --binding 0.0.0.0"
+    
   mitc:
     build:
       context: ../medicaid_eligibility
@@ -128,38 +239,46 @@ services:
     image: mitc:dev-0.1.0
     volumes:
       - ../medicaid_eligibility:/mitc
-      - gem_cache:/usr/local/bundle/2.3
+      - mitc_gem_cache:/usr/local/bundle/2.3
       - type: tmpfs
         target: /mitc/tmp/pids/
     command: bash -c "bin/rails server --port 3001 --binding 0.0.0.0"
     ports:
       - "3001:3001"
+    depends_on:
+      redis:
+        condition: service_healthy
+    links:
+      - redis
 
   polypress:
     build:
       context: ../polypress
       dockerfile: ../ea_enterprise/site/polypress_service/Dockerfile
     image: polypress:dev-0.1.0
-    command: bundle install
     volumes:
       - ../polypress:/polypress
-      - gem_cache:/usr/local/bundle/2.7.2
-      # - yarn_cache:/yarn
-      # - node_modules_cache:/polypress/node_modules
+      - polypress_gem_cache:/usr/local/bundle/2.7
     env_file:
-      - ./site/.env
-      - ./site/rabbitmq/rabbitmq.env
+      - ./site/.env.dev
+      - ./site/rabbitmq/rabbitmq.dev.env
     depends_on:
-      - mongodb
-      - rabbitmq
+      mongodb:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     ports:
       - "3003:3003"
-    command: bash -c "rm -f tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && bin/rails server --port 3003 --binding 0.0.0.0"
+    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bin/rails server --port 3003 --binding 0.0.0.0"
+    links:
+      - mongodb
+      - rabbitmq
 
 volumes:
   mitc:
-  gem_cache:
-  # yarn_cache:
+  fdsh_gem_cache:
+  polypress_gem_cache:
+  mitc_gem_cache:
   node_modules_cache:
   packs_cache:
   mongodb:
@@ -167,3 +286,14 @@ volumes:
   rabbitmq_etc:
   rabbitmq_data:
   rabbitmq_logs:
+  mcg_rails_cache:
+  mcg_bundle:
+  mcg_node_modules:
+  mcg_packs:
+  mcg_gem_cache:
+  enroll_gem_cache:
+  enroll_node_modules_cache:
+  enroll_packs_cache:
+  enroll_rails_cache:
+  enroll_assets_cache:
+
