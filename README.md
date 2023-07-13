@@ -10,9 +10,9 @@ Clone the ea_enterprise repo:
 git clone https://github.com/ideacrew/ea_enterprise.git
 ```
 
-Copy the .env.example to .env.dev and change the values as needed (don't commit .env file)
+Copy the env.example to env.dev and change the values as needed (don't commit env file)
 ```
-cp .env.example .env.dev
+cp env.example env.dev
 ```
 
 Ensure the other repositories are present on your local machine and at the same level as ea_enterprise:
