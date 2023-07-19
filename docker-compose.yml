@@ -166,7 +166,7 @@ services:
       - ../fti:/fti
     # tmpfs:
     #   - /tmp
-    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bin/webpack && bin/rails server --port 3007 --binding 0.0.0.0"
+    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && rails webpacker:install:erb && bin/rails server --port 3007 --binding 0.0.0.0"
 
   fdsh_gateway:
     build:
