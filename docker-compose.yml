@@ -139,6 +139,35 @@ services:
     command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids  && bundle exec rake configuration:client_configuration_toggler && bin/rails server --port 3002 --binding 0.0.0.0"
 
 
+  fti:
+    image: fti:release_0.1.0
+    build:
+      context: ../fti
+      dockerfile: ../ea_enterprise/site/fti/Dockerfile
+    # env_file:
+    #   - ../fti/.env
+    # environment:
+    #   APP_NAME: "fti"
+    #   APP_VOLUME_NAME: fti
+    env_file:
+      - ./site/.env.dev
+      - ./site/rabbitmq/rabbitmq.dev.env
+      - env.dev
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "3007:3007"
+    volumes:
+      - ../fti:/fti
+    # tmpfs:
+    #   - /tmp
+    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bin/webpack && bin/rails server --port 3007 --binding 0.0.0.0"
+
   fdsh_gateway:
     build:
       context: ../fdsh_gateway
