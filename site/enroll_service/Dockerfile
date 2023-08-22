@@ -31,7 +31,6 @@ RUN apt-get update \
   xdg-utils \
   libxcomposite1 -y \
   chromium 
-  # chromium-driver
 
 ENV LANG=C.UTF-8 \
   SHELL=/bin/bash 
