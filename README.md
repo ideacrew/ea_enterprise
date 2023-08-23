@@ -39,7 +39,7 @@ the layout should look like this (you can change the *projects* folder)
 
 Be sure all repositories are up to date with their respective release branches before running any commands!
 
-## important concepts
+## Important concepts
 
 - inside the container: this means we will run a command inside the container, for example, `docker-compose exec enroll /bin/bash` will run the command `/bin/bash` inside the container `enroll` from there we can execute any command that is available inside the container, for example, `rails c` will open a rails console inside the container
 
@@ -114,7 +114,7 @@ docker-compose exec enroll /bin/bash
 docker-compose run enroll /bin/bash
 ```
 
-## restoring a database 
+## Restoring a database 
 
 Make sure Mongo is running
 
@@ -132,61 +132,61 @@ docker-compose exec enroll rails c
 
 - run tests (inside the container): 
 ```
-RAILS_ENV=test rspec components/financial_assistance/spec/
+RAILS_ENV=test bundle exec rspec components/financial_assistance/spec/
 ```
 
 - run test outside the container (cd to ea_enterprise first):
 ```
-docker-compose run -e "RAILS_ENV=test" enroll rspec components/financial_assistance/spec/
+docker-compose run -e "RAILS_ENV=test" bundle exec enroll rspec components/financial_assistance/spec/
 ```
 
 - open rails console (inside the container):
-## when do you need to restart the container?
+## When do you need to restart the container?
 
 Very similar to the rules regarding when to restart a rails application 
 
 - You changed something under /config 
 - You need to switch branches
 
-## when to trigger a rebuild 
+## When to trigger a rebuild 
 
 - you added or deleted a gem
 - you changed anything docker-compose.yml file
 - you changed the Dockerfile of any container
 
-## cucumber
+## Cucumber
 
-It is possible to run cucumber, however, there are 2 drawbacks; first is that the gem webdrivers have to be removed manually and trigger a container rebuild (it can be enroll alone with `docker build enroll`), and the second drawback is that it uses a "modified" env.rb that removes all the references to the webdriver gem, this is done automatically via a virtual volume on docker-compose (as end user you don't need to worry about this unless something big changes on cucumber).
+It is possible to run cucumber, however, there are 2 drawbacks; first is that the gem webdrivers have to be removed manually and the container restarted, and the second drawback is that it uses a "modified" env.rb that removes all the references to the webdriver gem, this is done automatically via a virtual volume on docker-compose (as end user you don't need to worry about this unless something big changes on cucumber).
 
 These are the steps to enable cucumber 
 
 1. On enroll edit the Gemfile and remove: `gem 'webdrivers', '~> 3.0'`
-2. Trigger a rebuild for enroll with 
+2. Trigger a restart for enroll with 
 ```
-docker-compose build enroll
+docker-compose restart enroll
 ```
 3. run cucumber
     - from inside the container (attach a shell to the container first)
 ```
-NODE_ENV=test RAILS_ENV=test  cucumber features/financial_assistance/view_eligibility.feature
+NODE_ENV=test RAILS_ENV=test bundle exec cucumber features/financial_assistance/view_eligibility.feature
 ```
     - from outside the container (inside the ea_enterprise directory): 
 ```
-docker-compose run -e "RAILS_ENV=test" enroll cucumber features/financial_assistance/view_eligibility.feature
+docker-compose run -e "RAILS_ENV=test" enroll bundle exec cucumber features/financial_assistance/view_eligibility.feature
 
 ```
 
 After rebuilding the container for the first time, only step 3 is needed
 
-## common issues and how to solve them
+## Common issues and how to solve them
 - rspec 
 ```
   uninitialized constant Mongoid::Matchers
 ```
-you are not running the specs on test environment, run them with `RAILS_ENV=test rspec`
+you are not running the specs on test environment, run them with `RAILS_ENV=test bundle exec rspec`
 
 
-## recommendations 
+## Recommendations 
 
 Some people complain about "writing" speed, and it's true, it's slow, however on the "experimental features", there is a new option called "VirtioFS" and it's fast, close to native fast, the recommendation is to enable it
 

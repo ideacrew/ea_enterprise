@@ -30,7 +30,7 @@ RUN apt-get update \
   lsb-release \
   xdg-utils \
   libxcomposite1 -y \
-  chromium 
+  chromium chromium-driver
 
 ENV LANG=C.UTF-8 \
   SHELL=/bin/bash 
