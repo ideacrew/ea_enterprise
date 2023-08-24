@@ -1,4 +1,4 @@
-FROM ruby:2.5.9
+FROM ruby:2.6.3-buster
 
 LABEL author="IdeaCrew"
 
@@ -39,11 +39,10 @@ RUN echo 'chromedriver $@ --whitelisted-ips' > /usr/local/bin/hackedchromedriver
 
 RUN chmod +x /usr/local/bin/hackedchromedriver
 
-RUN gem install bundler -v 2.3.16
+RUN gem install bundler -v 2.3.24
 
 COPY . $HOME
 RUN cd $HOME && bundle install
 RUN cd $HOME && yarn install --network-timeout 100000 
 RUN cd $HOME && npx browserslist@latest --update-db
-RUN cd $HOME/components/benefit_markets && bundle install
 
