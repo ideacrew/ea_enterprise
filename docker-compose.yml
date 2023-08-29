@@ -102,7 +102,7 @@ services:
     image: enroll:dev-0.1.0
     environment:
       - SHELL=/bin/bash
-    volumes: 
+    volumes:
       - ../enroll:/enroll
       - ${PWD}/hotpatches/cucumber_env.rb:/enroll/features/support/env.rb:ro
       - ${PWD}/hotpatches/mongoid-enroll.yml:/enroll/config/mongoid.yml:ro
@@ -136,7 +136,7 @@ services:
     ports:
       - "3002:3002"
     # don't set CLIENT here, change it on env.dev file :)
-    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids  && bundle exec rake configuration:client_configuration_toggler && bin/rails server --port 3002 --binding 0.0.0.0"
+    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && bundle exec rake configuration:client_configuration_toggler && bin/rails server --port 3002 --binding 0.0.0.0"
 
 
   fti:
@@ -166,7 +166,7 @@ services:
       - ../fti:/fti
     # tmpfs:
     #   - /tmp
-    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && rails webpacker:install:erb && bin/rails server --port 3007 --binding 0.0.0.0"
+    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && rails webpacker:install:erb && bin/rails server --port 3007 --binding 0.0.0.0"
 
   fdsh_gateway:
     build:
@@ -257,10 +257,10 @@ services:
       - "3005:3005"
     healthcheck:
       test: curl --fail http://localhost:3005 || exit 1
-      start_period: 20s 
+      start_period: 20s
       interval: 3m
     command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bin/rails server --port 3005 --binding 0.0.0.0"
-    
+
   mitc:
     build:
       context: ../medicaid_eligibility
