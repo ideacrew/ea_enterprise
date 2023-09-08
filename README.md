@@ -172,7 +172,7 @@ NODE_ENV=test RAILS_ENV=test bundle exec cucumber features/financial_assistance/
 ```
     - from outside the container (inside the ea_enterprise directory): 
 ```
-docker-compose run -e "RAILS_ENV=test" enroll bundle exec cucumber features/financial_assistance/view_eligibility.feature
+docker-compose exec -e "RAILS_ENV=test" enroll bundle exec cucumber features/financial_assistance/view_eligibility.feature
 
 ```
 
