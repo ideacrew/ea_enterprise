@@ -137,7 +137,7 @@ RAILS_ENV=test bundle exec rspec components/financial_assistance/spec/
 
 - run test outside the container (cd to ea_enterprise first):
 ```
-docker-compose run -e "RAILS_ENV=test" bundle exec enroll rspec components/financial_assistance/spec/
+docker-compose exec -e "RAILS_ENV=test" bundle exec enroll rspec components/financial_assistance/spec/
 ```
 
 - open rails console (inside the container):
@@ -201,7 +201,7 @@ NODE_ENV=test RAILS_ENV=test bundle exec cucumber features/financial_assistance/
 ```
     - from outside the container (inside the ea_enterprise directory): 
 ```
-docker-compose run -e "RAILS_ENV=test" enroll bundle exec cucumber features/financial_assistance/view_eligibility.feature
+docker-compose exec -e "RAILS_ENV=test" enroll bundle exec cucumber features/financial_assistance/view_eligibility.feature
 
 ```
 
