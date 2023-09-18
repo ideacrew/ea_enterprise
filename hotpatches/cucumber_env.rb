@@ -8,7 +8,7 @@
 
 ENV["RAILS_ENV"] ||= 'test'
 puts "------------------------------------------------------------------------"
-puts "RAILS_ENV: #{ENV["RAILS_ENV"]}"
+puts "RAILS_ENV: #{ENV['RAILS_ENV']}"
 $LOADING_CUCUMBER_ENV = true
 # require 'webdrivers'
 require 'cucumber/rails'
