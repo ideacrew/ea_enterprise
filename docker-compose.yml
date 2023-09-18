@@ -107,6 +107,11 @@ services:
       - ${PWD}/hotpatches/cucumber_env.rb:/enroll/features/support/env.rb:ro
       - ${PWD}/hotpatches/mongoid-enroll.yml:/enroll/config/mongoid.yml:ro
       - ${PWD}/hotpatches/mongoid-enroll.yml:/enroll/components/financial_assistance/spec/dummy/config/mongoid.yml:ro
+      - ${PWD}/hotpatches/mongoid-enroll.yml:/enroll/components/benefit_markets/spec/dummy/config/mongoid.yml:ro
+      - ${PWD}/hotpatches/mongoid-enroll.yml:/enroll/components/notifier/spec/dummy/config/mongoid.yml:ro
+      - ${PWD}/hotpatches/mongoid-enroll.yml:/enroll/components/sponsored_benefits/spec/dummy/config/mongoid.yml:ro
+      - ${PWD}/hotpatches/mongoid-enroll.yml:/enroll/components/transport_profiles/spec/dummy/config/mongoid.yml:ro
+      - ${PWD}/hotpatches/mongoid-enroll.yml:/enroll/components/benefit_sponsors/spec/dummy/config/mongoid.yml:ro
       - enroll_node_modules_cache:/enroll/node_modules
       - enroll_packs_cache:/enroll/public/packs
       - enroll_rails_cache:/enroll/tmp/cache
