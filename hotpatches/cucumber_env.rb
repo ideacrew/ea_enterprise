@@ -8,8 +8,17 @@
 
 ENV["RAILS_ENV"] ||= 'test'
 puts "------------------------------------------------------------------------"
-puts "RAILS_ENV: #{ENV["RAILS_ENV"]}"
+puts "RAILS_ENV: #{ENV['RAILS_ENV']}"
+puts "------------------------------------------------------------------------"
+puts "------------ THIS ENV FILE HAS BEEN HACKED BY DOCKER ! -----------------"
+puts "---------- see ea_enterprise README for more information ---------------"
+
 $LOADING_CUCUMBER_ENV = true
+if ENV["COVERAGE"]
+  require 'simplecov'
+  SimpleCov.command_name "specs_#{Process.pid}_#{ENV['TEST_ENV_NUMBER'] || '1'}"
+  SimpleCov.start 'rails'
+end
 # require 'webdrivers'
 require 'cucumber/rails'
 require 'email_spec/cucumber'

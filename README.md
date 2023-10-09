@@ -154,6 +154,35 @@ Very similar to the rules regarding when to restart a rails application
 - you changed anything docker-compose.yml file
 - you changed the Dockerfile of any container
 
+## Run the specs as Github Actions
+
+The IdeaCrew GHA runs the specs as "engines" that means it runs the specs for each component separately from the main enroll app. This can now be run under docker by following this method.
+
+1. start the containers
+```
+docker-compose up
+```
+
+2. open a shell on the running enroll
+```
+docker-compose exec enroll bash
+```
+
+3. go to the component you want to run the specs for example financial assitance
+```
+cd components/financial_assistance
+```
+
+4. bundle install
+```
+bundle install
+```
+
+5. run the specs
+```
+bundle exec rspec
+```
+
 ## Cucumber
 
 It is possible to run cucumber, however, there are 2 drawbacks; first is that the gem webdrivers have to be removed manually and the container restarted, and the second drawback is that it uses a "modified" env.rb that removes all the references to the webdriver gem, this is done automatically via a virtual volume on docker-compose (as end user you don't need to worry about this unless something big changes on cucumber).
