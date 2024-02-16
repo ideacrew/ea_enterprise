@@ -301,7 +301,7 @@ services:
     volumes:
       - ../polypress:/polypress
       - polypress_gem_cache:/usr/local/bundle/2.7
-      - ${PWD}/hotpatches/wicked_pdf.rb:/enroll/config/initializers/wicked_pdf.rb:ro
+      - ${PWD}/hotpatches/wicked_pdf.rb:/polypress/config/initializers/wicked_pdf.rb:ro
     env_file:
       - ./site/.env.dev
       - ./site/rabbitmq/rabbitmq.dev.env
