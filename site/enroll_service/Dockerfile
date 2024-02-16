@@ -30,7 +30,15 @@ RUN apt-get update \
   lsb-release \
   xdg-utils \
   libxcomposite1 -y \
+  xfonts-base xfonts-75dpi \ 
   chromium chromium-driver
+
+# https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.buster_amd64.deb
+# https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.buster_arm64.deb
+
+RUN wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.buster_arm64.deb \
+  && dpkg -i wkhtmltox_0.12.6-1.buster_arm64.deb \
+  && rm wkhtmltox_0.12.6-1.buster_arm64.deb
 
 ENV LANG=C.UTF-8 \
   SHELL=/bin/bash 

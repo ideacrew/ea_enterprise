@@ -60,6 +60,25 @@ services:
   #   ports:
   #     - 3030:3030
 
+  keycloak:
+    # profiles:
+    #   - keycloak
+    #   - all
+    image: quay.io/keycloak/keycloak:23.0.5
+    # env_file:
+    #   - ./site/keycloak/keycloak.dev.env
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      # - KEYCLOAK_IMPORT=/tmp/realm-export.json
+    ports:
+      - 8080:8080
+    healthcheck:
+      test: curl --fail http://localhost:8080 || exit 1
+      start_period: 20s
+      interval: 3m
+    command: ["start-dev"]
+
   enroll_helper:
     build:
       context: ../enroll
@@ -84,12 +103,12 @@ services:
     depends_on:
       enroll:
         condition: service_healthy
-    links:
-      - mongodb
-      - fdsh_gateway
-      - medicaid_gateway
-      - polypress
-    command: bash -c "bin/webpack && bundle exec rake 'seed:translations[db/seedfiles/english_translations_seed.rb]'"
+    # links:
+    #   - mongodb
+    #   - fdsh_gateway
+    #   - medicaid_gateway
+    #   - polypress
+    command: bash -c "bundle install && bin/webpack && bundle exec rake 'seed:translations[db/seedfiles/english_translations_seed.rb]'"
 
   #
   # Microservices
@@ -118,10 +137,12 @@ services:
       - enroll_assets_cache:/enroll/public/assets
       - ../aca_entities:/aca_entities
       - ../event_source:/event_source
+      - ${PWD}/hotpatches/keycloack/saml_information.rb:/enroll/config/saml_information.rb:ro
     env_file:
       - ./site/.env.dev
       - ./site/rabbitmq/rabbitmq.dev.env
       - env.dev
+      - sso.dev.env
     depends_on:
       mongodb:
         condition: service_started
@@ -133,18 +154,21 @@ services:
       test: curl --fail http://localhost:3002 || exit 1
       start_period: 70s # yes, enroll takes forever to load, tweak it further if you need to
       interval: 3m
-    links:
-      - mongodb
-      - fdsh_gateway
-      - medicaid_gateway
-      - polypress
+    # links:
+    #   - mongodb
+    #   - fdsh_gateway
+    #   - medicaid_gateway
+    #   - polypress
     ports:
       - "3002:3002"
     # don't set CLIENT here, change it on env.dev file :)
-    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids  && bundle exec rake configuration:client_configuration_toggler && bin/rails server --port 3002 --binding 0.0.0.0"
+    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && bundle exec rake configuration:client_configuration_toggler && bin/rails server --port 3002 --binding 0.0.0.0"
 
 
   fdsh_gateway:
+    profiles:
+      - fdsh_gateway
+      - all
     build:
       context: ../fdsh_gateway
       dockerfile: ../ea_enterprise/site/fdsh_gateway_service/Dockerfile
@@ -172,6 +196,9 @@ services:
       - "3006:3006"
 
   medicaid_gateway_helper:
+    profiles:
+      - medicaid_gateway
+      - all
     build:
       context: ../medicaid_gateway
       dockerfile: ../ea_enterprise/site/medicaid_gateway_service/Dockerfile
@@ -200,6 +227,9 @@ services:
 
 
   medicaid_gateway:
+    profiles:
+      - medicaid_gateway
+      - all
     build:
       context: ../medicaid_gateway
       dockerfile: ../ea_enterprise/site/medicaid_gateway_service/Dockerfile
@@ -238,6 +268,9 @@ services:
     command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bin/rails server --port 3005 --binding 0.0.0.0"
     
   mitc:
+    profiles:
+      - medicaid_gateway
+      - all
     build:
       context: ../medicaid_eligibility
       dockerfile: ../ea_enterprise/site/mitc_service/Dockerfile
@@ -257,6 +290,9 @@ services:
       - redis
 
   polypress:
+    profiles:
+      - polypress
+      - all
     build:
       context: ../polypress
       dockerfile: ../ea_enterprise/site/polypress_service/Dockerfile
@@ -278,6 +314,7 @@ services:
     links:
       - mongodb
       - rabbitmq
+
 
 volumes:
   mitc:
