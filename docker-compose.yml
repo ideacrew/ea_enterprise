@@ -125,6 +125,7 @@ services:
       - ../enroll:/enroll
       - ${PWD}/hotpatches/cucumber_env.rb:/enroll/features/support/env.rb:ro
       - ${PWD}/hotpatches/mongoid-enroll.yml:/enroll/config/mongoid.yml:ro
+      - ${PWD}/hotpatches/wicked_pdf.rb:/enroll/config/initializers/wicked_pdf.rb:ro
       - ${PWD}/hotpatches/mongoid-enroll.yml:/enroll/components/financial_assistance/spec/dummy/config/mongoid.yml:ro
       - ${PWD}/hotpatches/mongoid-enroll.yml:/enroll/components/benefit_markets/spec/dummy/config/mongoid.yml:ro
       - ${PWD}/hotpatches/mongoid-enroll.yml:/enroll/components/notifier/spec/dummy/config/mongoid.yml:ro
@@ -300,6 +301,7 @@ services:
     volumes:
       - ../polypress:/polypress
       - polypress_gem_cache:/usr/local/bundle/2.7
+      - ${PWD}/hotpatches/wicked_pdf.rb:/enroll/config/initializers/wicked_pdf.rb:ro
     env_file:
       - ./site/.env.dev
       - ./site/rabbitmq/rabbitmq.dev.env
