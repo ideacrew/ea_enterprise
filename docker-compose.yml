@@ -312,7 +312,7 @@ services:
         condition: service_healthy
     ports:
       - "3003:3003"
-    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && bin/rails server --port 3003 --binding 0.0.0.0"
+    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids &&  bundle install && bin/webpack && bin/rails server --port 3003 --binding 0.0.0.0"
     links:
       - mongodb
       - rabbitmq
