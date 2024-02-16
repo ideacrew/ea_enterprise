@@ -12,9 +12,13 @@ RUN curl -sL https://deb.nodesource.com/setup_12.x | bash -
 
 RUN apt-get update \
   && apt-get -yq dist-upgrade \
-  && apt-get install -y tzdata build-essential libsodium23 git nodejs vim \
+  && apt-get install -y tzdata build-essential libsodium23 git nodejs vim xfonts-base xfonts-75dpi \
   && apt-get autoremove -y \
   && npm install --force --global yarn
+
+RUN wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.buster_arm64.deb \
+  && dpkg -i wkhtmltox_0.12.6-1.buster_arm64.deb \
+  && rm wkhtmltox_0.12.6-1.buster_arm64.deb
 
 # ARG USER_ID
 # ARG GROUP_ID
@@ -33,7 +37,8 @@ ENV LANG=C.UTF-8 \
   BUNDLE_RETRY=3 \
   PATH=$GEM_HOME/bin:$GEM_HOME/gems/bin:$PATH
 
-RUN gem install --source "https://rubygems.org" bundler
+# RUN gem install --source "https://rubygems.org" bundler
+RUN gem install bundler -v 2.4.22
 RUN bundle config --global frozen 1
 
 RUN cd $HOME && bundle install

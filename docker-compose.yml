@@ -61,9 +61,9 @@ services:
   #     - 3030:3030
 
   keycloak:
-    # profiles:
-    #   - keycloak
-    #   - all
+    profiles:
+      - keycloak
+      - all
     image: quay.io/keycloak/keycloak:23.0.5
     # env_file:
     #   - ./site/keycloak/keycloak.dev.env
@@ -312,7 +312,7 @@ services:
         condition: service_healthy
     ports:
       - "3003:3003"
-    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bin/rails server --port 3003 --binding 0.0.0.0"
+    command: bash -c "rm -rf tmp/pids/server.pid && mkdir -p tmp/pids && bundle install && bin/rails server --port 3003 --binding 0.0.0.0"
     links:
       - mongodb
       - rabbitmq
